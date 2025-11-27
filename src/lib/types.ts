@@ -4,7 +4,7 @@ export type Project = {
   title: string;
   description: string;
   shortDescription: string;
-  images: string[] | string;
+  images: string[];
   bedrooms: number;
   bathrooms: number;
   area: number;

@@ -157,7 +157,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project?.images[0] : project?.images || "",
+      images: Array.isArray(project?.images) ? project?.images[0] : "",
       bedrooms: project?.bedrooms || 0,
       bathrooms: project?.bathrooms || 0,
       area: project?.area || 0,
@@ -173,17 +173,19 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
-    const projectData: Omit<Project, 'id'> = {
+    const projectData = {
       ...data,
       images: [data.images], // Ensure images is an array
       isFeatured: project?.isFeatured || false,
-      createdAt: project?.createdAt || new Date(),
     };
 
     try {
       if (project?.id) {
         // Update existing project
-        await setDoc(doc(firestore, 'projects', project.id), projectData, { merge: true });
+        await setDoc(doc(firestore, 'projects', project.id), {
+          ...projectData,
+          createdAt: project.createdAt || serverTimestamp() // Preserve original timestamp
+        }, { merge: true });
       } else {
         // Add new project with timestamp
         await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
