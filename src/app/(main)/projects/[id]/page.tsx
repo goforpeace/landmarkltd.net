@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useFirestore } from '@/firebase';
@@ -17,6 +17,8 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const firestore = useFirestore();
   const id = params.id;
   
+  // Create a memoized reference to the Firestore document.
+  // This is critical to prevent re-renders and ensure the hook works correctly.
   const projectRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'projects', id);
@@ -24,6 +26,8 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
   const { data: project, isLoading, error } = useDoc<Project>(projectRef);
 
+  // 1. Handle the loading state explicitly.
+  // While isLoading is true, show a spinner and do nothing else.
   if (isLoading) {
     return (
         <div className="flex justify-center items-center h-[80vh]">
@@ -32,16 +36,14 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     );
   }
 
-  // After loading, if there's an error or the project is null (doesn't exist), show 404.
-  if (error || (!project && !isLoading)) {
+  // 2. Handle the "Not Found" state AFTER loading is complete.
+  // If loading is finished and there's still no project (or an error occurred),
+  // then it's safe to show the 404 page.
+  if (!project) {
     notFound();
   }
   
-  // This check is for TypeScript to be sure `project` is not null past this point.
-  if (!project) {
-    return null;
-  }
-
+  // 3. If we've reached this point, loading is complete and the project exists.
   // Ensure images is always an array to prevent runtime errors.
   const images = Array.isArray(project.images) ? project.images : [project.images].filter(Boolean) as string[];
 
