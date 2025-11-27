@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useRouter } from 'next/navigation';
 import { login } from '@/lib/actions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,8 @@ function SubmitButton() {
   );
 }
 
-export default function AuthForm() {
+// The form now accepts a callback to signal successful login.
+export default function AuthForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [state, formAction] = useActionState(login, initialState);
   const { toast } = useToast();
   const auth = useAuth(); 
@@ -35,11 +35,12 @@ export default function AuthForm() {
       signInWithCustomToken(auth, state.token)
         .then(() => {
           // 2. On success, show a toast.
-          // NO REDIRECT. The parent component will re-render to show the dashboard.
           toast({
             title: 'Success',
             description: 'Login successful!',
           });
+          // 3. IMPORTANT: Call the callback to notify the parent component.
+          onLoginSuccess();
         })
         .catch((error) => {
           console.error("Client-side sign-in failed:", error);
@@ -56,7 +57,7 @@ export default function AuthForm() {
         description: state.message,
       });
     }
-  }, [state, toast, auth]);
+  }, [state, toast, auth, onLoginSuccess]);
 
   return (
     <form action={formAction} className="space-y-4">
