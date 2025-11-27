@@ -150,18 +150,24 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (auth && !user && !isUserLoading) {
-      const token = Cookies.get('admin-auth-token');
-      if (token) {
-        signInWithCustomToken(auth, token).catch((error) => {
-          console.error("Error signing in with custom token:", error);
-          // If token is invalid, log out and redirect
-          logout().finally(() => router.push('/ad-panel'));
-        });
-      } else {
-        // No token, redirect to login
+    if (isUserLoading || !auth) return; // Wait for auth service and user status
+
+    const token = Cookies.get('admin-auth-token');
+
+    if (!token) {
+        // No token found, redirect to login
         router.push('/ad-panel');
-      }
+        return;
+    }
+
+    if (!user) {
+        // Token exists but user is not signed in, attempt to sign in
+        signInWithCustomToken(auth, token).catch((error) => {
+            console.error("Admin sign-in failed:", error);
+            // If token is invalid, clear it and redirect
+            Cookies.remove('admin-auth-token');
+            router.push('/ad-panel');
+        });
     }
   }, [auth, user, isUserLoading, router]);
 
@@ -170,7 +176,7 @@ export default function AdminDashboard() {
     await logout();
   }
 
-  // While checking auth state, show a loader
+  // While checking auth state or if there's no user, show a loader
   if (isUserLoading || !user) {
     return (
         <div className="flex h-screen items-center justify-center">
