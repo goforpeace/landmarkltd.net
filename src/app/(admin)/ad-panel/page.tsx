@@ -12,14 +12,13 @@ export default function AdminLoginPage() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If the user object exists, it means they are signed in.
-    // This is handled by the onAuthStateChanged listener in FirebaseProvider.
+    // If the user object exists and loading is complete, it means they are signed in.
     if (!isUserLoading && user) {
       router.push('/ad-panel/dashboard');
     }
   }, [user, isUserLoading, router]);
 
-  // Show a loader while checking for a user, or if we are about to redirect.
+  // Show a loader while checking for a user or if we are about to redirect.
   if (isUserLoading || user) {
     return <div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>;
   }
