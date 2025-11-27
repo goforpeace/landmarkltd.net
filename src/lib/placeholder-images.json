@@ -1,3 +1,82 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "A beautiful modern house exterior at dusk.",
+      "imageUrl": "https://picsum.photos/seed/hero/1920/1080",
+      "imageHint": "modern house"
+    },
+    {
+      "id": "featured-project-1",
+      "description": "Living room of a luxury apartment.",
+      "imageUrl": "https://images.unsplash.com/photo-1669387448840-610c588f003d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBsaXZpbmdyb29tfGVufDB8fHx8MTc2NDIyNzEyNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury livingroom"
+    },
+    {
+      "id": "featured-project-2",
+      "description": "Modern kitchen with island.",
+      "imageUrl": "https://images.unsplash.com/photo-1632583824020-937ae9564495?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtb2Rlcm4lMjBraXRjaGVufGVufDB8fHx8MTc2NDIxMzY3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern kitchen"
+    },
+    {
+      "id": "featured-project-3",
+      "description": "Spacious bedroom with a view.",
+      "imageUrl": "https://images.unsplash.com/photo-1576095910326-9de5a8b207e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxiZWRyb29tJTIwdmlld3xlbnwwfHx8fDE3NjQyMjcxMjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bedroom view"
+    },
+    {
+      "id": "project-carousel-1",
+      "description": "Exterior of a suburban family home.",
+      "imageUrl": "https://images.unsplash.com/photo-1675747158956-c9a09189e4b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdWJ1cmJhbiUyMGhvbWV8ZW58MHx8fHwxNzY0MTE3NDc5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "suburban home"
+    },
+    {
+      "id": "project-carousel-2",
+      "description": "A downtown high-rise apartment building.",
+      "imageUrl": "https://images.unsplash.com/photo-1527465094057-db061fdbfaf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhcGFydG1lbnQlMjBidWlsZGluZ3xlbnwwfHx8fDE3NjQxOTA3MjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "apartment building"
+    },
+    {
+      "id": "project-carousel-3",
+      "description": "A cozy cottage with a garden.",
+      "imageUrl": "https://picsum.photos/seed/pc3/600/400",
+      "imageHint": "cozy cottage"
+    },
+    {
+      "id": "project-carousel-4",
+      "description": "A beachfront property with ocean views.",
+      "imageUrl": "https://images.unsplash.com/photo-1617845244696-ab1a363f06b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxiZWFjaGZyb250JTIwaG91c2V8ZW58MHx8fHwxNzY0MTI5MTc4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beachfront house"
+    },
+    {
+      "id": "dream-home",
+      "description": "A silhouette of a family looking at a house.",
+      "imageUrl": "https://picsum.photos/seed/dream/1200/800",
+      "imageHint": "family home"
+    },
+    {
+      "id": "project-detail-1",
+      "description": "Detailed view of project 1.",
+      "imageUrl": "https://images.unsplash.com/photo-1600851335013-42f2b34497de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhcmNoaXRlY3R1cmUlMjBkZXRhaWx8ZW58MHx8fHwxNzY0MTUzMzk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architecture detail"
+    },
+    {
+      "id": "project-detail-2",
+      "description": "Interior shot of project 2.",
+      "imageUrl": "https://picsum.photos/seed/pd2/1200/800",
+      "imageHint": "modern interior"
+    },
+    {
+      "id": "project-detail-3",
+      "description": "Garden and patio of project 3.",
+      "imageUrl": "https://images.unsplash.com/photo-1576318356824-667e0fae99af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxob3VzZSUyMGdhcmRlbnxlbnwwfHx8fDE3NjQxNDcwODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "house garden"
+    },
+    {
+      "id": "project-detail-4",
+      "description": "Balcony view from project 4.",
+      "imageUrl": "https://images.unsplash.com/photo-1597086831626-aca8ef5a0046?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxiYWxjb255JTIwdmlld3xlbnwwfHx8fDE3NjQxNDQ1MjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "balcony view"
+    }
+  ]
 }
