@@ -27,39 +27,36 @@ function SubmitButton() {
 export default function AuthForm() {
   const [state, formAction] = useActionState(login, initialState);
   const { toast } = useToast();
-  const router = useRouter();
   const auth = useAuth(); 
 
   useEffect(() => {
-    // This effect runs when the server action completes
     if (state?.success && state.token && auth) {
-      // 1. If the login was successful and we have a token, sign in on the client
+      // 1. If the server action was successful, sign in with the custom token.
       signInWithCustomToken(auth, state.token)
         .then(() => {
-          // 2. After successful client-side sign-in, redirect to the dashboard
+          // 2. On success, show a toast.
+          // NO REDIRECT. The parent component will re-render to show the dashboard.
           toast({
             title: 'Success',
             description: 'Login successful!',
           });
-          router.push('/ad-panel/dashboard');
         })
         .catch((error) => {
           console.error("Client-side sign-in failed:", error);
           toast({
             variant: 'destructive',
             title: 'Authentication Failed',
-            description: 'Could not complete sign-in process.',
+            description: 'Could not complete client-side sign-in.',
           });
         });
     } else if (state?.message && !state.success) {
-      // If login failed on the server, show an error
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
         description: state.message,
       });
     }
-  }, [state, toast, router, auth]);
+  }, [state, toast, auth]);
 
   return (
     <form action={formAction} className="space-y-4">

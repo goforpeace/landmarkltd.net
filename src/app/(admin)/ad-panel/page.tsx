@@ -1,31 +1,32 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/admin/auth-form';
+import AdminDashboard from '@/components/admin/admin-dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Building } from 'lucide-react';
 import { useUser } from '@/firebase';
 
-export default function AdminLoginPage() {
-  const router = useRouter();
+export default function AdminPage() {
   const { user, isUserLoading } = useUser();
-
-  useEffect(() => {
-    // If the user object exists and loading is complete, it means they are already signed in.
-    // Redirect them to the dashboard.
-    if (!isUserLoading && user) {
-      router.replace('/ad-panel/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
-  // Show a loader while checking for a user or if we are about to redirect.
-  // This prevents the login form from flashing on screen for an already-logged-in user.
-  if (isUserLoading || user) {
-    return <div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>;
-  }
   
-  // If no user and not loading, it's safe to show the login form.
+  // The AdminDashboard is now rendered conditionally on this page.
+  // The useUser hook will update when signInWithCustomToken succeeds in AuthForm.
+  // When 'user' becomes available, this component re-renders, showing the dashboard.
+  if (!isUserLoading && user) {
+    return <AdminDashboard />;
+  }
+
+  // Show a loading indicator while Firebase initializes, but not if the user is already found.
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading admin panel...</p>
+      </div>
+    );
+  }
+
+  // If not loading and no user, show the login form.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 dark:bg-gray-900">
         <div className="flex items-center gap-2 mb-6">

@@ -22,7 +22,6 @@ import {
 import { useCollection, useFirestore, useAuth } from '@/firebase';
 import { collection, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { useRouter } from "next/navigation";
 
 
 function MessagesTab() {
@@ -151,15 +150,12 @@ function ProjectsTab() {
 
 export default function AdminDashboard() {
   const auth = useAuth();
-  const router = useRouter();
   
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
+      // The parent component will handle re-rendering to show the login form.
     }
-    // After signing out, the useEffect in the dashboard page component
-    // will detect the user is null and redirect to the login page.
-    router.replace('/ad-panel');
   }
 
 
