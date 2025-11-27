@@ -2,10 +2,9 @@
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, deleteDoc as deleteDocFs } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-// Removed admin SDK import as we are simplifying the login flow
-// import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
+import { initializeFirebase } from '@/firebase/server';
 
 // --- PIN Authentication ---
 const pinSchema = z.object({
@@ -64,17 +63,86 @@ export async function submitContactForm(prevState: any, formData: FormData) {
         success: false,
       };
     }
-  
-  return {
-    message: 'Thank you for your message! We will get back to you shortly.',
-    success: true,
-  };
 
+    try {
+        const { firestore } = initializeFirebase();
+        await addDoc(collection(firestore, 'contact_messages'), {
+            ...validatedFields.data,
+            createdAt: serverTimestamp(),
+        });
+
+        revalidatePath('/ad-panel');
+
+        return {
+            message: 'Thank you for your message! We will get back to you shortly.',
+            success: true,
+        };
+
+    } catch (error) {
+        console.error("Error submitting contact form:", error);
+        return {
+            message: 'An unexpected error occurred. Please try again.',
+            success: false,
+        };
+    }
 }
 
 // --- Admin Data Mutation ---
-export async function deleteMessage(id: string) {
-    // This also requires admin privileges and will fail with the current setup.
-    // We'll leave it for now, but it won't work until server auth is fixed.
-    console.log(`Attempted to delete message ${id}, but server admin auth is not configured.`);
+const projectSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(3, "Title must be at least 3 characters long."),
+  shortDescription: z.string().min(10, "Short description is required."),
+  description: z.string().min(20, "Full description is required."),
+  images: z.array(z.string().url()).min(1, "At least one image URL is required."),
+  details: z.object({
+    bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
+    bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
+    area: z.coerce.number().min(1, "Area must be greater than 0."),
+    location: z.string().min(3, "Location is required."),
+    status: z.enum(['Completed', 'Under Construction', 'Sold']),
+  }),
+});
+
+
+export async function addOrUpdateProject(data: unknown) {
+  const validatedFields = projectSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return { success: false, message: 'Invalid project data.' };
+  }
+  
+  const { id, ...projectData } = validatedFields.data;
+
+  try {
+    const { firestore } = initializeFirebase();
+    if (id) {
+      // Update existing project
+      await setDoc(doc(firestore, 'projects', id), projectData, { merge: true });
+    } else {
+      // Add new project
+      await addDoc(collection(firestore, 'projects'), projectData);
+    }
+    revalidatePath('/ad-panel');
+    revalidatePath('/projects');
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving project:', error);
+    return { success: false, message: 'Failed to save project.' };
+  }
+}
+
+export async function deleteProject(id: string) {
+  if (!id) {
+    return { success: false, message: 'Project ID is required.' };
+  }
+  try {
+    const { firestore } = initializeFirebase();
+    await deleteDocFs(doc(firestore, 'projects', id));
+    revalidatePath('/ad-panel');
+    revalidatePath('/projects');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return { success: false, message: 'Failed to delete project.' };
+  }
 }

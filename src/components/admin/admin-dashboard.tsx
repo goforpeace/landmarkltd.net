@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, LogOut, Mail, Trash2 } from "lucide-react";
+import { Building, LogOut, Mail, Trash2, Edit, PlusCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
@@ -19,9 +23,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useCollection, useFirestore, useAuth } from '@/firebase';
 import { collection, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { addOrUpdateProject, deleteProject } from "@/lib/actions";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 
 function MessagesTab() {
@@ -122,26 +140,223 @@ function MessagesTab() {
   );
 }
 
+const projectSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters long."),
+  shortDescription: z.string().min(10, "Short description is required."),
+  description: z.string().min(20, "Full description is required."),
+  images: z.string().url("Please enter a valid image URL.").min(1, "At least one image URL is required."),
+  details: z.object({
+    bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
+    bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
+    area: z.coerce.number().min(1, "Area must be greater than 0."),
+    location: z.string().min(3, "Location is required."),
+    status: z.enum(['Completed', 'Under Construction', 'Sold']),
+  }),
+});
+
+function ProjectForm({ project, onSave }: { project?: Project, onSave: () => void }) {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: {
+      title: project?.title || "",
+      shortDescription: project?.shortDescription || "",
+      description: project?.description || "",
+      images: project?.images[0] || "",
+      details: {
+        bedrooms: project?.details.bedrooms || 0,
+        bathrooms: project?.details.bathrooms || 0,
+        area: project?.details.area || 0,
+        location: project?.details.location || "",
+        status: project?.details.status || "Under Construction",
+      },
+    }
+  });
+  const { toast } = useToast();
+
+  const processSubmit = async (data: z.infer<typeof projectSchema>) => {
+    const projectData = {
+      ...data,
+      id: project?.id, // Include existing ID if updating
+      images: [data.images], // The form only takes one image for now.
+    };
+
+    const result = await addOrUpdateProject(projectData);
+    if (result.success) {
+      toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
+      onSave();
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="title">Project Title</Label>
+        <Input id="title" {...register("title")} />
+        {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="shortDescription">Short Description</Label>
+        <Input id="shortDescription" {...register("shortDescription")} />
+        {errors.shortDescription && <p className="text-sm text-destructive">{errors.shortDescription.message}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Full Description</Label>
+        <Textarea id="description" {...register("description")} />
+        {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="images">Main Image URL</Label>
+        <Input id="images" {...register("images")} placeholder="https://example.com/image.jpg" />
+        {errors.images && <p className="text-sm text-destructive">{errors.images.message}</p>}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="location">Location</Label>
+          <Input id="location" {...register("details.location")} />
+          {errors.details?.location && <p className="text-sm text-destructive">{errors.details.location.message}</p>}
+        </div>
+         <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <select id="status" {...register("details.status")} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option>Under Construction</option>
+            <option>Completed</option>
+            <option>Sold</option>
+          </select>
+          {errors.details?.status && <p className="text-sm text-destructive">{errors.details.status.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bedrooms">Bedrooms</Label>
+          <Input id="bedrooms" type="number" {...register("details.bedrooms")} />
+          {errors.details?.bedrooms && <p className="text-sm text-destructive">{errors.details.bedrooms.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bathrooms">Bathrooms</Label>
+          <Input id="bathrooms" type="number" {...register("details.bathrooms")} />
+          {errors.details?.bathrooms && <p className="text-sm text-destructive">{errors.details.bathrooms.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="area">Area (sqft)</Label>
+          <Input id="area" type="number" {...register("details.area")} />
+          {errors.details?.area && <p className="text-sm text-destructive">{errors.details.area.message}</p>}
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {project?.id ? "Update Project" : "Add Project"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+
 function ProjectsTab() {
   const firestore = useFirestore();
-    const projectsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'projects'), orderBy('title', 'asc'));
-    }, [firestore]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'projects'), orderBy('title', 'asc'));
+  }, [firestore]);
     
-    const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
+  const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
+  const { toast } = useToast();
+
+  const handleDelete = async (id: string) => {
+    const result = await deleteProject(id);
+     if (result.success) {
+      toast({ title: "Success", description: "Project deleted successfully." });
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+  };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Manage Projects</CardTitle>
-        <CardDescription>Add, edit, or remove projects.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Manage Projects</CardTitle>
+          <CardDescription>Add, edit, or remove projects.</CardDescription>
+        </div>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+              <DialogTitle>Add New Project</DialogTitle>
+              <DialogDescription>Fill in the details for the new project.</DialogDescription>
+            </DialogHeader>
+            <ProjectForm onSave={() => setIsFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
-        {/* Project management UI will go here */}
-        <div className="text-center py-10">
-          <p className="text-muted-foreground">Project management functionality is coming soon.</p>
-        </div>
+         <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+             {isLoading && (
+                 <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">Loading projects...</TableCell>
+                </TableRow>
+            )}
+            {!isLoading && projects && projects.map((project) => (
+              <TableRow key={project.id}>
+                <TableCell>{project.title}</TableCell>
+                <TableCell>{project.details.location}</TableCell>
+                <TableCell>{project.details.status}</TableCell>
+                <TableCell className="text-right">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[625px]">
+                       <DialogHeader>
+                        <DialogTitle>Edit Project</DialogTitle>
+                        <DialogDescription>Update the details for this project.</DialogDescription>
+                      </DialogHeader>
+                      <ProjectForm project={project} onSave={() => {
+                        // A bit of a hack to close the dialog, would be better to manage state
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                      }} />
+                    </DialogContent>
+                  </Dialog>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the project.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(project.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+             {!isLoading && (!projects || projects.length === 0) && (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">No projects found. Add one!</TableCell>
+                </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
