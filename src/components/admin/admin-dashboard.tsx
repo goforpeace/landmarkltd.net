@@ -32,7 +32,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useCollection, useFirestore, useAuth } from '@/firebase';
+import { useCollection, useFirestore, useAuth, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
@@ -59,20 +59,11 @@ function MessagesTab() {
             });
             return;
         }
-        try {
-            await deleteDoc(doc(firestore, "contact_messages", id));
-            toast({
-                title: "Success",
-                description: "Message deleted successfully.",
-            });
-        } catch (error) {
-            console.error("Failed to delete message:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to delete message.",
-            });
-        }
+        deleteDocumentNonBlocking(doc(firestore, "contact_messages", id));
+        toast({
+            title: "Success",
+            description: "Message deleted successfully.",
+        });
     };
     
   return (
@@ -157,7 +148,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project?.images[0] : "",
+      images: Array.isArray(project?.images) ? project?.images[0] : (project?.images as unknown as string || ""),
       bedrooms: project?.bedrooms || 0,
       bathrooms: project?.bathrooms || 0,
       area: project?.area || 0,
@@ -182,13 +173,13 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     try {
       if (project?.id) {
         // Update existing project
-        await setDoc(doc(firestore, 'projects', project.id), {
+        updateDocumentNonBlocking(doc(firestore, 'projects', project.id), {
           ...projectData,
           createdAt: project.createdAt || serverTimestamp() // Preserve original timestamp
-        }, { merge: true });
+        });
       } else {
         // Add new project with timestamp
-        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
+        addDocumentNonBlocking(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
       }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
@@ -278,13 +269,8 @@ function ProjectsTab() {
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
-    try {
-      await deleteDoc(doc(firestore, 'projects', id));
-      toast({ title: "Success", description: "Project deleted successfully." });
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to delete project." });
-    }
+    deleteDocumentNonBlocking(doc(firestore, 'projects', id));
+    toast({ title: "Success", description: "Project deleted successfully." });
   };
 
   const handleSetFeatured = async (projectIdToFeature: string) => {

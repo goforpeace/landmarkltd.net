@@ -3,10 +3,8 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-// NOTE: We are removing server-side firebase admin to fix crashes.
-// Client-side logic will handle DB operations.
-// import { initializeFirebase } from '@/firebase/server';
-// import { collection, addDoc, serverTimestamp, doc, setDoc, deleteDoc as deleteDocFs } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase/server';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 
 // --- PIN Authentication ---
@@ -48,55 +46,44 @@ const contactSchema = z.object({
 });
 
 export async function submitContactForm(prevState: any, formData: FormData) {
-  // This action uses the client-side SDK via a special import,
-  // but it's better to keep this as a server action if possible.
-  // For now, we'll assume it will fail if server-side SDK is not configured.
-  // A proper fix would be to have the client call this, but that's a bigger refactor.
-  // Let's assume this action will be called from the client component which has auth context.
-  
   const validatedFields = contactSchema.safeParse({
-      name: formData.get('name'),
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      message: formData.get('message'),
+    name: formData.get('name'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    message: formData.get('message'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      message: 'Validation failed. Please check your input.',
+      errors: validatedFields.error.flatten().fieldErrors,
+      success: false,
+    };
+  }
+
+  try {
+    // Use the admin SDK for this server-side operation.
+    // This is safe because contact form submission does not require user authentication context.
+    const { firestore } = initializeFirebase();
+    
+    // Perform a non-blocking write.
+    addDoc(collection(firestore, 'contact_messages'), {
+        ...validatedFields.data,
+        createdAt: serverTimestamp(),
     });
 
-    if (!validatedFields.success) {
+    revalidatePath('/ad-panel');
+
+    return {
+        message: 'Thank you for your message! We will get back to you shortly.',
+        success: true,
+    };
+
+  } catch (error) {
+      console.error("Error submitting contact form:", error);
       return {
-        message: 'Validation failed. Please check your input.',
-        errors: validatedFields.error.flatten().fieldErrors,
-        success: false,
+          message: 'An unexpected error occurred. Please try again.',
+          success: false,
       };
-    }
-
-    try {
-        // This is tricky. Server actions run without client auth context.
-        // For this to work, we'd need to initialize admin, which is the source of the crash.
-        // Since we are moving all authenticated writes to the client,
-        // this function will likely fail if called. The contact form doesn't require auth, so it might be okay.
-        // Let's comment out the firestore logic to prevent crashes. A better solution would be a dedicated API endpoint.
-        
-        // const { firestore } = initializeFirebase(); // This will crash
-        // await addDoc(collection(firestore, 'contact_messages'), {
-        //     ...validatedFields.data,
-        //     createdAt: serverTimestamp(),
-        // });
-
-        console.log("Contact form submitted (server action). Data:", validatedFields.data);
-        revalidatePath('/ad-panel');
-
-        return {
-            message: 'Thank you for your message! We will get back to you shortly.',
-            success: true,
-        };
-
-    } catch (error) {
-        console.error("Error submitting contact form:", error);
-        return {
-            message: 'An unexpected error occurred. Please try again.',
-            success: false,
-        };
-    }
+  }
 }
-
-    
