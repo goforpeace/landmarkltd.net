@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { collection, addDoc, deleteDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
 
@@ -26,10 +26,15 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   if (validatedFields.data.pin === HARDCODED_PIN) {
-    const { auth } = await getFirebaseAdmin();
-    const uid = `admin_pin_user_${Date.now()}`; 
+    const { auth, firestore } = await getFirebaseAdmin();
+    const uid = `admin_pin_user_${Date.now()}`;
     
-    const customToken = await auth.createCustomToken(uid, { isAdmin: true });
+    // Grant admin role by creating a document in the roles_admin collection
+    const adminRoleRef = doc(firestore, 'roles_admin', uid);
+    await setDoc(adminRoleRef, { grantedAt: serverTimestamp() });
+
+    // Create a custom token for this user
+    const customToken = await auth.createCustomToken(uid);
 
     cookies().set('admin-auth-token', customToken, {
       httpOnly: true,
@@ -38,7 +43,6 @@ export async function login(prevState: any, formData: FormData) {
       path: '/',
     });
     
-    // Instead of redirecting, return a success state
     return { success: true, message: 'Login successful' };
   } else {
     return { message: 'Invalid PIN.' };

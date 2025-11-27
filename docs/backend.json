@@ -81,13 +81,18 @@
       "type": "object",
       "description": "Represents an administrative user.",
       "properties": {
-        "id": {
+        "uid": {
           "type": "string",
-          "description": "Unique identifier for the AdminUser entity."
+          "description": "The user's unique ID."
+        },
+        "grantedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when admin role was granted."
         }
       },
       "required": [
-        "id"
+        "uid"
       ]
     }
   },
@@ -142,7 +147,7 @@
           "params": [
             {
               "name": "adminId",
-              "description": "The unique identifier for the admin user."
+              "description": "The unique identifier for the admin user, which is their UID."
             }
           ]
         }
