@@ -19,41 +19,38 @@ const pinSchema = z.object({
 
 export async function login(prevState: any, formData: FormData) {
   const HARDCODED_PIN = '5206';
-  const STATIC_ADMIN_UID = 'the-one-and-only-admin-user'; // A static, predictable UID for the admin.
+  // A static, predictable UID for the admin to ensure consistency.
+  const STATIC_ADMIN_UID = 'the-one-and-only-admin-user'; 
 
   const validatedFields = pinSchema.safeParse({ pin: formData.get('pin') });
 
   if (!validatedFields.success) {
-    return { message: 'Invalid PIN format.', success: false };
+    return { message: 'Invalid PIN format.', success: false, token: null };
   }
 
   if (validatedFields.data.pin === HARDCODED_PIN) {
     const { auth, firestore } = await getFirebaseAdmin();
     
     // Ensure the admin role document exists for our static admin UID.
-    // Using setDoc with merge is idempotent and safe to call on every login.
+    // This is idempotent and safe to call on every login.
     const adminRoleRef = doc(firestore, 'roles_admin', STATIC_ADMIN_UID);
     await setDoc(adminRoleRef, { grantedAt: serverTimestamp() }, { merge: true });
 
     // Create a custom token for the static admin user.
     const customToken = await auth.createCustomToken(STATIC_ADMIN_UID);
 
-    cookies().set('admin-auth-token', customToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60, // 1 hour
-      path: '/',
-    });
+    // No longer using cookies for this part of the flow.
+    // The token is returned directly to the client form for immediate sign-in.
     
-    return { success: true, message: 'Login successful' };
+    return { success: true, message: 'Login successful', token: customToken };
   } else {
-    return { message: 'Invalid PIN.', success: false };
+    return { message: 'Invalid PIN.', success: false, token: null };
   }
 }
 
 export async function logout() {
-  cookies().delete('admin-auth-token');
-  // The client will handle the redirect
+  // This can be simplified as we are not using cookies for auth session management in the same way.
+  // The client will handle sign-out. We can keep this action in case we need to do server-side cleanup later.
 }
 
 

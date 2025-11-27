@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Building, LogOut, Mail, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
-import { logout } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -158,10 +157,9 @@ export default function AdminDashboard() {
     if (auth) {
       await auth.signOut();
     }
-    // Call server action to delete cookie
-    await logout();
-    // Force a reload and redirect to the login page
-    router.push('/ad-panel');
+    // After signing out, the useEffect in the dashboard page component
+    // will detect the user is null and redirect to the login page.
+    router.replace('/ad-panel');
   }
 
 

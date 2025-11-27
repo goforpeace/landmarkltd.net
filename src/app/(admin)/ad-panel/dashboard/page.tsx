@@ -1,59 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithCustomToken } from 'firebase/auth';
+import { useEffect } from 'react';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import AdminDashboard from '@/components/admin/admin-dashboard';
 
 export default function DashboardPage() {
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const [isSigningIn, setIsSigningIn] = useState(true);
 
   useEffect(() => {
-    if (isUserLoading || !auth) return;
-
-    if (user) {
-      // If user is already loaded (from a previous session restore or successful sign-in), we are good.
-      setIsSigningIn(false);
-      return;
+    // If the initial auth state check is complete and there is still no user,
+    // it means they are not logged in. Redirect them to the login page.
+    if (!isUserLoading && !user) {
+      router.replace('/ad-panel');
     }
+  }, [user, isUserLoading, router]);
 
-    // If there is no user and we are done loading, attempt to sign in with the custom token.
-    const attemptSignIn = async () => {
-      try {
-        const response = await fetch('/api/auth/session-login');
-        if (!response.ok) {
-          throw new Error('Could not get session token.');
-        }
-        const { token } = await response.json();
-        
-        if (token) {
-          await signInWithCustomToken(auth, token);
-          // The onAuthStateChanged listener in the FirebaseProvider will update the `user` state,
-          // which will cause a re-render. On the next render, `user` will exist.
-        } else {
-          // If there's no token, they aren't logged in. Redirect.
-          router.push('/ad-panel');
-        }
-      } catch (error) {
-        console.error("Admin sign-in failed:", error);
-        router.push('/ad-panel');
-      } finally {
-        // Set signing in to false only after the attempt is made,
-        // but the redirect will handle the UI state.
-        setIsSigningIn(false);
-      }
-    };
-    
-    attemptSignIn();
-
-  }, [auth, user, isUserLoading, router]);
-  
-  // Show a loading screen while the initial user check is happening or while we are attempting to sign in.
-  if (isUserLoading || isSigningIn) {
+  // While we wait for the auth state, show a loading indicator.
+  // This prevents the AdminDashboard from rendering and trying to fetch data
+  // before we know if the user is authenticated.
+  if (isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p>Loading admin session...</p>
@@ -61,17 +28,17 @@ export default function DashboardPage() {
     );
   }
 
-  // After all loading and sign-in attempts, if there is still no user, they are not authorized.
-  if (!user) {
-    // This part should ideally not be reached if the redirects work, but serves as a final guard.
-    router.push('/ad-panel');
-    return (
-       <div className="flex h-screen items-center justify-center">
-         <p>Redirecting to login...</p>
-       </div>
-    );
+  // If the auth check is done and we have a user, it means the sign-in
+  // from the login page was successful. Render the dashboard.
+  if (user) {
+    return <AdminDashboard />;
   }
 
-  // If we have a user, it means sign-in was successful. Show the dashboard.
-  return <AdminDashboard />;
+  // If we reach here, it means we are about to redirect, so we show a
+  // loading/redirecting message to avoid a flash of unstyled content.
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <p>Redirecting to login...</p>
+    </div>
+  );
 }
