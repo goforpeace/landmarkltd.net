@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,10 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { useCollection, useFirestore, useAuth } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { addOrUpdateProject, deleteProject } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -161,7 +159,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: project?.images[0] || "",
+      images: project?.images?.[0] || "",
       details: {
         bedrooms: project?.details.bedrooms || 0,
         bathrooms: project?.details.bathrooms || 0,
@@ -172,20 +170,31 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
   });
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const processSubmit = async (data: z.infer<typeof projectSchema>) => {
+    if (!firestore) {
+      toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
+      return;
+    }
     const projectData = {
       ...data,
-      id: project?.id, // Include existing ID if updating
       images: [data.images], // The form only takes one image for now.
     };
 
-    const result = await addOrUpdateProject(projectData);
-    if (result.success) {
+    try {
+      if (project?.id) {
+        // Update existing project
+        await setDoc(doc(firestore, 'projects', project.id), projectData, { merge: true });
+      } else {
+        // Add new project
+        await addDoc(collection(firestore, 'projects'), projectData);
+      }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.message });
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to save project." });
     }
   };
 
@@ -265,11 +274,16 @@ function ProjectsTab() {
   const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    const result = await deleteProject(id);
-     if (result.success) {
+     if (!firestore) {
+      toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
+      return;
+    }
+    try {
+      await deleteDoc(doc(firestore, 'projects', id));
       toast({ title: "Success", description: "Project deleted successfully." });
-    } else {
-      toast({ variant: "destructive", title: "Error", description: result.message });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete project." });
     }
   };
 
@@ -408,3 +422,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
