@@ -1,67 +1,54 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { initializeFirebase } from '@/firebase/server';
+import { getAuth } from 'firebase-admin/auth';
 
+// This must run on the Node.js runtime because it uses the Firebase Admin SDK.
 export const runtime = 'nodejs';
 
-async function isSessionValid(request: NextRequest): Promise<boolean> {
-  const tokenCookie = request.cookies.get('admin-auth-token');
-  if (!tokenCookie) {
+// This function initializes Firebase Admin and verifies the token.
+async function verifyAdminToken(token: string): Promise<boolean> {
+  if (!token) {
     return false;
   }
-
-  // We need to construct an absolute URL to fetch from the API route
-  const url = request.nextUrl.clone();
-  url.pathname = '/api/auth/session';
-  
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        // Forward the cookie to the API route for validation
-        'Cookie': `admin-auth-token=${tokenCookie.value}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data.isValid;
-    }
-    return false;
+    initializeFirebase();
+    const decodedToken = await getAuth().verifyIdToken(token, true);
+    return decodedToken.isAdmin === true;
   } catch (error) {
-    console.error('Error validating session in middleware:', error);
+    console.error('Error verifying auth token in middleware:', error);
     return false;
   }
 }
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const token = request.cookies.get('admin-auth-token')?.value;
 
-  // Protect the dashboard and related assets
-  if (path.startsWith('/ad-panel/dashboard')) {
-    const valid = await isSessionValid(request);
-    if (!valid) {
-      // If session is not valid, redirect to the login page
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = '/ad-panel';
-      loginUrl.search = ''; // Clear any query params
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-  // If user is logged in and tries to access the login page, redirect them to the dashboard
-  else if (path === '/ad-panel') {
-    const valid = await isSessionValid(request);
-    if (valid) {
-      const dashboardUrl = request.nextUrl.clone();
-      dashboardUrl.pathname = '/ad-panel/dashboard';
-      dashboardUrl.search = '';
-      return NextResponse.redirect(dashboardUrl);
-    }
+  const isProtectedPath = path.startsWith('/ad-panel/dashboard');
+  const isAdminLoginPage = path === '/ad-panel';
+
+  let isValid = false;
+  if (token) {
+    isValid = await verifyAdminToken(token);
   }
 
-  // Allow the request to proceed
+  // If trying to access a protected page without a valid session, redirect to login.
+  if (isProtectedPath && !isValid) {
+    const loginUrl = new URL('/ad-panel', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // If already logged in and trying to access the login page, redirect to the dashboard.
+  if (isAdminLoginPage && isValid) {
+    const dashboardUrl = new URL('/ad-panel/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
   return NextResponse.next();
 }
 
-// Define the paths this middleware should apply to
+// Define the paths this middleware should apply to.
 export const config = {
   matcher: ['/ad-panel/dashboard/:path*', '/ad-panel'],
 };
