@@ -26,6 +26,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { signInWithCustomToken } from 'firebase/auth';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
 
 function MessagesTab() {
@@ -146,6 +147,7 @@ function ProjectsTab() {
 export default function AdminDashboard() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     if (auth && !user && !isUserLoading) {
@@ -153,15 +155,28 @@ export default function AdminDashboard() {
       if (token) {
         signInWithCustomToken(auth, token).catch((error) => {
           console.error("Error signing in with custom token:", error);
-          // Could redirect to login page here
+          // If token is invalid, log out and redirect
+          logout().finally(() => router.push('/ad-panel'));
         });
+      } else {
+        // No token, redirect to login
+        router.push('/ad-panel');
       }
     }
-  }, [auth, user, isUserLoading]);
+  }, [auth, user, isUserLoading, router]);
 
   const handleLogout = async () => {
     await auth?.signOut();
     await logout();
+  }
+
+  // While checking auth state, show a loader
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Loading...</p>
+        </div>
+    )
   }
 
   return (
