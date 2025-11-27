@@ -55,25 +55,22 @@ export default function ProjectsCarouselSection() {
               {projects.map((project) => (
                 <CarouselItem key={project.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
-                    <Card className="overflow-hidden group">
-                      <CardContent className="p-0">
-                        <div className="relative aspect-w-4 aspect-h-3">
-                          <Image
-                            src={Array.isArray(project.images) ? project.images[0] : project.images}
-                            alt={project.title}
-                            width={600}
-                            height={400}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            data-ai-hint="modern architecture"
-                          />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0" />
-                        </div>
-                        <div className="absolute bottom-0 left-0 p-4 w-full">
-                          <h3 className="font-headline text-xl font-semibold text-white">{project.title}</h3>
-                          <Button asChild variant="secondary" size="sm" className="mt-2 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30">
-                            <Link href={`/projects/${project.id}`}>View Project</Link>
-                          </Button>
-                        </div>
+                    <Card className="overflow-hidden group flex flex-col h-full">
+                      <div className="relative aspect-[3/4] w-full">
+                        <Image
+                          src={Array.isArray(project.images) ? project.images[0] : project.images}
+                          alt={project.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          data-ai-hint="modern architecture"
+                        />
+                      </div>
+                      <CardContent className="p-4 flex flex-col flex-grow">
+                        <h3 className="font-headline text-xl font-semibold text-primary">{project.title}</h3>
+                        <p className="text-muted-foreground text-sm mt-1 flex-grow">{project.shortDescription.substring(0, 80)}...</p>
+                        <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
+                          <Link href={`/projects/${project.id}`}>View Project</Link>
+                        </Button>
                       </CardContent>
                     </Card>
                   </div>
