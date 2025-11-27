@@ -14,11 +14,12 @@ import { Separator } from '@/components/ui/separator';
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const id = params.id;
   
   const projectRef = useMemo(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'projects', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'projects', id);
+  }, [firestore, id]);
 
   const { data: project, isLoading, error } = useDoc<Project>(projectRef);
 
