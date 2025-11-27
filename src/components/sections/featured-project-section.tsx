@@ -44,7 +44,12 @@ export default function FeaturedProjectSection() {
     );
   }
 
-  const imageUrl = Array.isArray(featuredProject.images) ? featuredProject.images[0] : featuredProject.images;
+  const imageUrl = Array.isArray(featuredProject.images) && featuredProject.images.length > 0
+    ? featuredProject.images[0]
+    : typeof featuredProject.images === 'string'
+    ? featuredProject.images
+    : null;
+
 
   return (
     <section className="w-full bg-background py-16 md:py-24">

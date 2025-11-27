@@ -21,7 +21,7 @@ export default function ProjectsCarouselSection() {
   const firestore = useFirestore();
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'projects'), orderBy('title', 'asc'));
+    return query(collection(firestore, 'projects'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
@@ -52,20 +52,29 @@ export default function ProjectsCarouselSection() {
             onMouseLeave={plugin.current.reset}
           >
             <CarouselContent className="-ml-4">
-              {projects.map((project) => (
+              {projects.map((project) => {
+                 const imageUrl = Array.isArray(project.images) && project.images.length > 0
+                    ? project.images[0]
+                    : typeof project.images === 'string'
+                    ? project.images
+                    : null;
+                
+                return(
                 <CarouselItem key={project.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
-                    <Card className="overflow-hidden group flex flex-col h-full">
+                    <Card className="overflow-hidden group flex flex-col h-full shadow-md hover:shadow-xl transition-shadow duration-300">
+                     {imageUrl && (
                       <div className="relative aspect-[3/4] w-full">
                         <Image
-                          src={Array.isArray(project.images) ? project.images[0] : project.images}
+                          src={imageUrl}
                           alt={project.title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           data-ai-hint="modern architecture"
                         />
                       </div>
-                      <CardContent className="p-4 flex flex-col flex-grow">
+                     )}
+                      <CardContent className="p-4 flex flex-col flex-grow bg-card">
                         <h3 className="font-headline text-xl font-semibold text-primary">{project.title}</h3>
                         <p className="text-muted-foreground text-sm mt-1 flex-grow">{project.shortDescription.substring(0, 80)}...</p>
                         <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
@@ -75,7 +84,7 @@ export default function ProjectsCarouselSection() {
                     </Card>
                   </div>
                 </CarouselItem>
-              ))}
+              )})}
             </CarouselContent>
             <CarouselPrevious className="ml-14" />
             <CarouselNext className="mr-14" />
