@@ -1,56 +1,58 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { initializeFirebase as initializeFirebaseAdmin } from './firebase/server';
-import { getAuth } from 'firebase-admin/auth';
 
 export const runtime = 'nodejs';
 
 async function isSessionValid(request: NextRequest): Promise<boolean> {
-  const authTokenCookie = request.cookies.get('admin-auth-token');
-  const token = authTokenCookie?.value;
-
-  if (!token) {
+  const tokenCookie = request.cookies.get('admin-auth-token');
+  if (!tokenCookie) {
     return false;
   }
+
+  const url = request.nextUrl.clone();
+  url.pathname = '/api/auth/session';
   
   try {
-    // We need to initialize the admin app here to verify the token
-    initializeFirebaseAdmin();
-    const decodedToken = await getAuth().verifyIdToken(token, true);
-    // Check if the custom claim is present
-    return decodedToken.isAdmin === true;
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Cookie': `admin-auth-token=${tokenCookie.value}`,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.isValid;
+    }
+    return false;
   } catch (error) {
-     try {
-        const decodedToken = await getAuth().verifyIdToken(token);
-        return decodedToken.isAdmin === true;
-     } catch (error) {
-        console.error('Error verifying auth token:', error);
-        return false;
-     }
+    console.error('Error validating session in middleware:', error);
+    return false;
   }
 }
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  // Protect the dashboard
   if (path.startsWith('/ad-panel/dashboard')) {
     const valid = await isSessionValid(request);
     if (!valid) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/ad-panel';
-      url.search = ''; // Clear any query params
-      return NextResponse.redirect(url);
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/ad-panel';
+      loginUrl.search = '';
+      return NextResponse.redirect(loginUrl);
     }
-  } else if (path === '/ad-panel') {
-     const valid = await isSessionValid(request);
-     if(valid) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/ad-panel/dashboard';
-        url.search = '';
-        return NextResponse.redirect(url);
-     }
   }
-
+  // If user is logged in and tries to access login page, redirect to dashboard
+  else if (path === '/ad-panel') {
+    const valid = await isSessionValid(request);
+    if (valid) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = '/ad-panel/dashboard';
+      dashboardUrl.search = '';
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
 
   return NextResponse.next();
 }
