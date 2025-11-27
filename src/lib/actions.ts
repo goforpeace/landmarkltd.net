@@ -3,11 +3,9 @@
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { collection, getDocs, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import type { ContactMessage, Project } from './types';
+import { collection, addDoc, deleteDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
-import { getAuth } from 'firebase-admin/auth';
 
 // Server actions should use the admin SDK when appropriate for privileged operations
 async function getFirebaseAdmin() {
