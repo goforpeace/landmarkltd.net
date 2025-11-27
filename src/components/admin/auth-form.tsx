@@ -45,7 +45,7 @@ export default function AuthForm() {
     <form action={formAction} className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="pin">PIN Code</Label>
-            <Input id="pin" name="pin" type="password" required maxLength={4} pattern="\\d{4}" placeholder="Enter 4-digit PIN" />
+            <Input id="pin" name="pin" type="password" required maxLength={4} placeholder="Enter 4-digit PIN" />
         </div>
       <SubmitButton />
     </form>
