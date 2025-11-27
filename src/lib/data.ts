@@ -5,6 +5,7 @@ import { PlaceHolderImages } from './placeholder-images';
 
 const getImage = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
+// This is now just sample data and not used by the live site's featured project section.
 export const projects: Project[] = [
   {
     id: '1',

@@ -33,7 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useCollection, useFirestore, useAuth } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -159,7 +159,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: project?.images?.[0] || "",
+      images: Array.isArray(project?.images) ? project?.images[0] : project?.images || "",
       details: {
         bedrooms: project?.details.bedrooms || 0,
         bathrooms: project?.details.bathrooms || 0,
@@ -179,7 +179,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
     const projectData = {
       ...data,
-      images: [data.images], // The form only takes one image for now.
+      images: [data.images], // Ensure images is an array
     };
 
     try {
@@ -187,8 +187,8 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         // Update existing project
         await setDoc(doc(firestore, 'projects', project.id), projectData, { merge: true });
       } else {
-        // Add new project
-        await addDoc(collection(firestore, 'projects'), projectData);
+        // Add new project with timestamp
+        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
       }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
@@ -422,5 +422,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

@@ -4,7 +4,7 @@ export type Project = {
   title: string;
   description: string;
   shortDescription: string;
-  images: string[];
+  images: string[] | string; // Can be an array or a single string
   details: {
     bedrooms: number;
     bathrooms: number;
@@ -12,6 +12,10 @@ export type Project = {
     location: string;
     status: 'Completed' | 'Under Construction' | 'Sold';
   };
+  createdAt?: { // Added for sorting featured project
+    seconds: number;
+    nanoseconds: number;
+  } | Date;
 };
 
 export type Service = {

@@ -6,20 +6,57 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
-import { featuredProject } from '@/lib/data';
 import Autoplay from 'embla-carousel-autoplay';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/provider';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import type { Project } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 export default function FeaturedProjectSection() {
     const plugin = React.useRef(
         Autoplay({ delay: 3000, stopOnInteraction: true })
     );
+
+    const firestore = useFirestore();
+    const featuredProjectQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        // Fetch the most recent project
+        return query(collection(firestore, 'projects'), orderBy('createdAt', 'desc'), limit(1));
+    }, [firestore]);
+
+    const { data: projects, isLoading } = useCollection<Project>(featuredProjectQuery);
+    const featuredProject = projects?.[0];
     
     const projectImages = [
         PlaceHolderImages.find(img => img.id === 'featured-project-1'),
         PlaceHolderImages.find(img => img.id === 'featured-project-2'),
         PlaceHolderImages.find(img => img.id === 'featured-project-3')
     ].filter(Boolean);
+
+  if (isLoading) {
+    return (
+      <section className="w-full bg-background py-16 md:py-24">
+        <div className="container mx-auto px-4 text-center">
+           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+           <p className="mt-4 text-muted-foreground">Loading Featured Project...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!featuredProject) {
+    return (
+        <section className="w-full bg-background py-16 md:py-24">
+             <div className="container mx-auto px-4 text-center">
+                <h2 className="font-headline text-4xl md:text-5xl font-bold text-primary">Featured Project</h2>
+                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">No featured project available yet. Add one in the admin panel!</p>
+            </div>
+        </section>
+    );
+  }
+
 
   return (
     <section className="w-full bg-background py-16 md:py-24">
@@ -52,16 +89,16 @@ export default function FeaturedProjectSection() {
                         onMouseLeave={plugin.current.reset}
                     >
                         <CarouselContent>
-                             {projectImages.map((image, index) => (
+                             {(Array.isArray(featuredProject.images) ? featuredProject.images : [featuredProject.images]).map((imageSrc, index) => (
                                 <CarouselItem key={index}>
                                     <div className="aspect-w-4 aspect-h-3">
                                         <Image
-                                            src={image!.imageUrl}
-                                            alt={image!.description}
+                                            src={imageSrc}
+                                            alt={featuredProject.title}
                                             width={800}
                                             height={600}
                                             className="w-full h-full object-cover"
-                                            data-ai-hint={image!.imageHint}
+                                            data-ai-hint="modern architecture"
                                         />
                                     </div>
                                 </CarouselItem>
