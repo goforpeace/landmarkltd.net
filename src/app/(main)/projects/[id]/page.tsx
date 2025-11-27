@@ -32,16 +32,17 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     );
   }
 
+  // After loading, if there's an error or the project is null (doesn't exist), show 404.
   if (error || (!project && !isLoading)) {
     notFound();
   }
   
+  // This check is for TypeScript to be sure `project` is not null past this point.
   if (!project) {
-    // This case is handled by the notFound() call above after loading,
-    // but it's good practice to have it here to satisfy TypeScript.
     return null;
   }
 
+  // Ensure images is always an array to prevent runtime errors.
   const images = Array.isArray(project.images) ? project.images : [project.images].filter(Boolean) as string[];
 
   return (
