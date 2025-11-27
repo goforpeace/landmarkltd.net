@@ -1,8 +1,9 @@
-'use server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { initializeFirebase as initializeFirebaseAdmin } from './firebase/server';
 import { getAuth } from 'firebase-admin/auth';
+
+export const runtime = 'nodejs';
 
 async function isSessionValid(request: NextRequest): Promise<boolean> {
   const authTokenCookie = request.cookies.get('admin-auth-token');
