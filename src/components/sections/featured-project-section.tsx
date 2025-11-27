@@ -4,9 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
-import Autoplay from 'embla-carousel-autoplay';
 import { useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where, limit } from 'firebase/firestore';
@@ -14,10 +12,6 @@ import type { Project } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 export default function FeaturedProjectSection() {
-    const plugin = React.useRef(
-        Autoplay({ delay: 3000, stopOnInteraction: true })
-    );
-
     const firestore = useFirestore();
     const featuredProjectQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -77,29 +71,22 @@ export default function FeaturedProjectSection() {
             </div>
             <div className="lg:mb-[-50px]">
                 <Card className="overflow-hidden shadow-2xl">
-                     <Carousel
-                        plugins={[plugin.current]}
-                        className="w-full"
-                        onMouseEnter={plugin.current.stop}
-                        onMouseLeave={plugin.current.reset}
-                    >
-                        <CarouselContent>
-                             {imageUrl && (
-                                <CarouselItem>
-                                    <div className="aspect-w-4 aspect-h-3">
-                                        <Image
-                                            src={imageUrl}
-                                            alt={featuredProject.title}
-                                            width={800}
-                                            height={600}
-                                            className="w-full h-full object-cover"
-                                            data-ai-hint="modern architecture"
-                                        />
-                                    </div>
-                                </CarouselItem>
-                            )}
-                        </CarouselContent>
-                    </Carousel>
+                     {imageUrl ? (
+                        <div className="aspect-w-4 aspect-h-3">
+                            <Image
+                                src={imageUrl}
+                                alt={featuredProject.title}
+                                width={800}
+                                height={600}
+                                className="w-full h-full object-cover"
+                                data-ai-hint="modern architecture"
+                            />
+                        </div>
+                    ) : (
+                        <div className="aspect-w-4 aspect-h-3 bg-muted flex items-center justify-center">
+                            <p className="text-muted-foreground">No image available</p>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>

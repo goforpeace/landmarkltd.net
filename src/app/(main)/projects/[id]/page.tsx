@@ -11,12 +11,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BedDouble, Bath, Square, MapPin, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useMemoFirebase } from '@/firebase/provider';
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
   const id = params.id;
   
-  const projectRef = useMemo(() => {
+  const projectRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'projects', id);
   }, [firestore, id]);
@@ -36,12 +37,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   }
   
   if (!project) {
-    // This case should be handled by the notFound() call above, but it's good practice
-    // to have it here to satisfy TypeScript and prevent rendering with null data.
+    // This case is handled by the notFound() call above after loading,
+    // but it's good practice to have it here to satisfy TypeScript.
     return null;
   }
 
-  const images = Array.isArray(project.images) ? project.images : [project.images];
+  const images = Array.isArray(project.images) ? project.images : [project.images].filter(Boolean);
 
   return (
     <div className="bg-background py-12 md:py-20">
@@ -53,25 +54,31 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
         <Card className="overflow-hidden shadow-2xl mb-12">
           <CardContent className="p-0">
-            <Carousel className="w-full">
-              <CarouselContent>
-                {images.map((img, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative aspect-[16/9] w-full">
-                      <Image
-                        src={img}
-                        alt={`${project.title} image ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        data-ai-hint="architecture detail"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="absolute left-4" />
-              <CarouselNext className="absolute right-4" />
-            </Carousel>
+            {images.length > 0 ? (
+                <Carousel className="w-full">
+                <CarouselContent>
+                    {images.map((img, index) => (
+                    <CarouselItem key={index}>
+                        <div className="relative aspect-[16/9] w-full">
+                        <Image
+                            src={img}
+                            alt={`${project.title} image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            data-ai-hint="architecture detail"
+                        />
+                        </div>
+                    </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4" />
+                <CarouselNext className="absolute right-4" />
+                </Carousel>
+            ) : (
+                <div className="aspect-[16/9] w-full bg-muted flex items-center justify-center">
+                    <p className="text-muted-foreground">No image available</p>
+                </div>
+            )}
           </CardContent>
         </Card>
 
