@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a real estate project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the project."
+        },
+        "imageUrls": {
+          "type": "array",
+          "description": "URLs for the images of the project.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "details": {
+          "type": "string",
+          "description": "Full details about the project."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "imageUrls",
+        "details"
+      ]
+    },
+    "ContactMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ContactMessage",
+      "type": "object",
+      "description": "Represents a message submitted through the contact form.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ContactMessage entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the person submitting the message."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the person submitting the message.",
+          "format": "email"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message content."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of when the message was submitted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "message",
+        "timestamp"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an administrative user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AdminUser entity."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores details of real estate projects.  Accessible by admins.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contact_messages/{contactMessageId}",
+        "definition": {
+          "entityName": "ContactMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ContactMessage"
+          },
+          "description": "Stores contact messages submitted by users.  Accessible only by admins.",
+          "params": [
+            {
+              "name": "contactMessageId",
+              "description": "The unique identifier for the contact message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Indicates administrative privileges. The existence of a document with a user's UID in this collection grants admin rights.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier for the admin user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage real estate projects, contact messages, and admin users for the Landmark Estates application. It emphasizes authorization independence and simplifies security rules. The structure leverages structural segregation to maintain homogeneous security postures within collections.\n\n*   `/projects`: Stores project details. No user-specific authorization is needed for reading projects, so it's a simple collection. Admins, managed via `/roles_admin/{adminId}`, have write access.\n*   `/contact_messages`: Stores messages submitted via the contact form. Only admins can read these messages. Similar to projects, admin authorization is managed via `/roles_admin/{adminId}`.\n*   `/roles_admin/{adminId}`: This collection signifies admin privileges. The existence of a document with the admin's UID grants admin rights. This approach simplifies the security rules and avoids relying on custom claims or document content for authorization, thus promoting Authorization Independence.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into collections with distinct security requirements (projects vs. contact messages) ensures that list operations can be secured effectively. For example, listing projects does not require complex filtering based on user roles because all documents in `/projects` share the same access control policies.\n*   Admin access is controlled via the existence of documents in `/roles_admin/{adminId}`, providing a clear and efficient way to determine administrative privileges."
+  }
+}
