@@ -173,9 +173,11 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
-    const projectData: Partial<Project> = {
+    const projectData: Omit<Project, 'id'> = {
       ...data,
       images: [data.images], // Ensure images is an array
+      isFeatured: project?.isFeatured || false,
+      createdAt: project?.createdAt || new Date(),
     };
 
     try {
@@ -184,7 +186,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         await setDoc(doc(firestore, 'projects', project.id), projectData, { merge: true });
       } else {
         // Add new project with timestamp
-        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp(), isFeatured: false });
+        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
       }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
