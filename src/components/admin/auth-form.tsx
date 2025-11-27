@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-import { signInWithCustomToken } from 'firebase/auth';
+import { signInAnonymously } from 'firebase/auth';
 
 const initialState = { message: '', success: false, token: null };
 
@@ -23,27 +23,25 @@ function SubmitButton() {
   );
 }
 
-// The form now accepts a callback to signal successful login.
 export default function AuthForm({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [state, formAction] = useActionState(login, initialState);
   const { toast } = useToast();
   const auth = useAuth(); 
 
   useEffect(() => {
-    if (state?.success && state.token && auth) {
-      // 1. If the server action was successful, sign in with the custom token.
-      signInWithCustomToken(auth, state.token)
+    if (state?.success && auth) {
+      // The server action succeeded. Now, ensure the user is signed in on the client.
+      // We'll use anonymous sign-in as a simple way to get an authenticated session.
+      signInAnonymously(auth)
         .then(() => {
-          // 2. On success, show a toast.
           toast({
             title: 'Success',
             description: 'Login successful!',
           });
-          // 3. IMPORTANT: Call the callback to notify the parent component.
           onLoginSuccess();
         })
         .catch((error) => {
-          console.error("Client-side sign-in failed:", error);
+          console.error("Client-side anonymous sign-in failed:", error);
           toast({
             variant: 'destructive',
             title: 'Authentication Failed',
