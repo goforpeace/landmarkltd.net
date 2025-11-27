@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,16 +21,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useCollection } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 
-function MessagesTab({ initialMessages }: { initialMessages: ContactMessage[] }) {
-    const [messages, setMessages] = useState(initialMessages);
+function MessagesTab() {
+    const firestore = useFirestore();
+    const messagesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'contact_messages'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
+    
+    const { data: messages, isLoading } = useCollection<ContactMessage>(messagesQuery);
     const { toast } = useToast();
 
     const handleDelete = async (id: string) => {
         try {
             await deleteMessage(id);
-            setMessages(messages.filter(msg => msg.id !== id));
             toast({
                 title: "Success",
                 description: "Message deleted successfully.",
@@ -63,9 +71,14 @@ function MessagesTab({ initialMessages }: { initialMessages: ContactMessage[] })
             </TableRow>
           </TableHeader>
           <TableBody>
-            {messages.length > 0 ? messages.map((message) => (
+            {isLoading && (
+                 <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">Loading messages...</TableCell>
+                </TableRow>
+            )}
+            {!isLoading && messages && messages.length > 0 ? messages.map((message) => (
               <TableRow key={message.id}>
-                <TableCell>{format(new Date(message.createdAt), 'dd MMM yyyy')}</TableCell>
+                <TableCell>{message.createdAt ? format(new Date(message.createdAt.seconds * 1000), 'dd MMM yyyy') : 'N/A'}</TableCell>
                 <TableCell>{message.name}</TableCell>
                 <TableCell>{message.email}</TableCell>
                 <TableCell>{message.phone}</TableCell>
@@ -90,7 +103,7 @@ function MessagesTab({ initialMessages }: { initialMessages: ContactMessage[] })
                     </AlertDialog>
                 </TableCell>
               </TableRow>
-            )) : (
+            )) : !isLoading && (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">No messages yet.</TableCell>
                 </TableRow>
@@ -103,6 +116,7 @@ function MessagesTab({ initialMessages }: { initialMessages: ContactMessage[] })
 }
 
 function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
+  // This can also be converted to useCollection if projects are managed in Firestore
   return (
     <Card>
       <CardHeader>
@@ -120,7 +134,7 @@ function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
 
 
 type AdminDashboardProps = {
-    initialMessages: ContactMessage[];
+    initialMessages: ContactMessage[]; // This can be removed if not pre-fetched
     initialProjects: Project[];
 }
 export default function AdminDashboard({ initialMessages, initialProjects }: AdminDashboardProps) {
@@ -153,7 +167,7 @@ export default function AdminDashboard({ initialMessages, initialProjects }: Adm
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
           </TabsList>
           <TabsContent value="messages" className="mt-6">
-            <MessagesTab initialMessages={initialMessages} />
+            <MessagesTab />
           </TabsContent>
           <TabsContent value="projects" className="mt-6">
             <ProjectsTab initialProjects={initialProjects} />

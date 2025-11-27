@@ -31,5 +31,8 @@ export type ContactMessage = {
   email: string;
   phone: string;
   message: string;
-  createdAt: Date;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | Date;
 };

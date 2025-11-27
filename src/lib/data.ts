@@ -103,14 +103,5 @@ export const faqs: FAQ[] = [
   }
 ];
 
-// Mock database for contact messages
-export let contactMessages: ContactMessage[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '123-456-7890',
-    message: 'I am very interested in The Azure Residence. Can I get more information?',
-    createdAt: new Date(),
-  }
-];
+// Mock database for contact messages is now removed and handled by Firestore.
+export let contactMessages: ContactMessage[] = [];

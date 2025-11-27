@@ -1,4 +1,4 @@
-import PinAuth from '@/components/admin/pin-auth';
+import AuthForm from '@/components/admin/auth-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Building } from 'lucide-react';
 
@@ -11,11 +11,11 @@ export default function AdminLoginPage() {
         </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Enter Access PIN</CardTitle>
-          <CardDescription>Please enter your PIN to access the admin dashboard.</CardDescription>
+          <CardTitle>Admin Login</CardTitle>
+          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
-          <PinAuth />
+          <AuthForm />
         </CardContent>
       </Card>
     </div>
