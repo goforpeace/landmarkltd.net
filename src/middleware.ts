@@ -1,3 +1,4 @@
+'use server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { initializeFirebase as initializeFirebaseAdmin } from './firebase/server';
@@ -14,7 +15,7 @@ async function isSessionValid(request: NextRequest): Promise<boolean> {
   try {
     // We need to initialize the admin app here to verify the token
     initializeFirebaseAdmin();
-    const decodedToken = await getAuth().verifySessionCookie(token, true);
+    const decodedToken = await getAuth().verifyIdToken(token, true);
     // Check if the custom claim is present
     return decodedToken.isAdmin === true;
   } catch (error) {
