@@ -28,6 +28,10 @@
         "details": {
           "type": "string",
           "description": "Full details about the project."
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Indicates if the project is featured on the homepage."
         }
       },
       "required": [

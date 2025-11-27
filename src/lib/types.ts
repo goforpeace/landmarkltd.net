@@ -14,6 +14,7 @@ export type Project = {
     seconds: number;
     nanoseconds: number;
   } | Date;
+  isFeatured?: boolean;
 };
 
 export type Service = {

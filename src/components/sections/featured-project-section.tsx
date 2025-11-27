@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import Autoplay from 'embla-carousel-autoplay';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
@@ -22,18 +21,12 @@ export default function FeaturedProjectSection() {
     const firestore = useFirestore();
     const featuredProjectQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Fetch the most recent project
-        return query(collection(firestore, 'projects'), orderBy('createdAt', 'desc'), limit(1));
+        // Fetch the project marked as featured
+        return query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
     }, [firestore]);
 
     const { data: projects, isLoading } = useCollection<Project>(featuredProjectQuery);
     const featuredProject = projects?.[0];
-    
-    const projectImages = [
-        PlaceHolderImages.find(img => img.id === 'featured-project-1'),
-        PlaceHolderImages.find(img => img.id === 'featured-project-2'),
-        PlaceHolderImages.find(img => img.id === 'featured-project-3')
-    ].filter(Boolean);
 
   if (isLoading) {
     return (
@@ -51,12 +44,13 @@ export default function FeaturedProjectSection() {
         <section className="w-full bg-background py-16 md:py-24">
              <div className="container mx-auto px-4 text-center">
                 <h2 className="font-headline text-4xl md:text-5xl font-bold text-primary">Featured Project</h2>
-                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">No featured project available yet. Add one in the admin panel!</p>
+                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">No featured project available yet. Set one in the admin panel!</p>
             </div>
         </section>
     );
   }
 
+  const imageUrl = Array.isArray(featuredProject.images) ? featuredProject.images[0] : featuredProject.images;
 
   return (
     <section className="w-full bg-background py-16 md:py-24">
@@ -73,7 +67,8 @@ export default function FeaturedProjectSection() {
                         <CardDescription className="text-base">{featuredProject.shortDescription}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="mb-6 text-foreground/80">{featuredProject.description.substring(0, 200)}...</p>
+                        <p className="text-sm text-muted-foreground mb-2"><strong>Location:</strong> {featuredProject.location}</p>
+                        <p className="mb-6 text-foreground/80">{featuredProject.description.substring(0, 150)}...</p>
                         <Button asChild className="bg-primary hover:bg-primary/90">
                             <Link href={`/projects/${featuredProject.id}`}>View Details</Link>
                         </Button>
@@ -89,11 +84,11 @@ export default function FeaturedProjectSection() {
                         onMouseLeave={plugin.current.reset}
                     >
                         <CarouselContent>
-                             {(Array.isArray(featuredProject.images) ? featuredProject.images : [featuredProject.images]).map((imageSrc, index) => (
-                                <CarouselItem key={index}>
+                             {imageUrl && (
+                                <CarouselItem>
                                     <div className="aspect-w-4 aspect-h-3">
                                         <Image
-                                            src={imageSrc}
+                                            src={imageUrl}
                                             alt={featuredProject.title}
                                             width={800}
                                             height={600}
@@ -102,7 +97,7 @@ export default function FeaturedProjectSection() {
                                         />
                                     </div>
                                 </CarouselItem>
-                            ))}
+                            )}
                         </CarouselContent>
                     </Carousel>
                 </Card>

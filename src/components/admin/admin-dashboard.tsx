@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, LogOut, Mail, Trash2, Edit, PlusCircle, Loader2 } from "lucide-react";
+import { Building, LogOut, Mail, Trash2, Edit, PlusCircle, Loader2, Star } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useCollection, useFirestore, useAuth } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -101,7 +101,7 @@ function MessagesTab() {
             )}
             {!isLoading && messages && messages.length > 0 ? messages.map((message) => (
               <TableRow key={message.id}>
-                <TableCell>{message.createdAt ? format(new Date(message.createdAt.seconds * 1000), 'dd MMM yyyy') : 'N/A'}</TableCell>
+                <TableCell>{message.createdAt ? format(new Date((message.createdAt as any).seconds * 1000), 'dd MMM yyyy') : 'N/A'}</TableCell>
                 <TableCell>{message.name}</TableCell>
                 <TableCell>{message.email}</TableCell>
                 <TableCell>{message.phone}</TableCell>
@@ -173,7 +173,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
-    const projectData = {
+    const projectData: Partial<Project> = {
       ...data,
       images: [data.images], // Ensure images is an array
     };
@@ -184,7 +184,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         await setDoc(doc(firestore, 'projects', project.id), projectData, { merge: true });
       } else {
         // Add new project with timestamp
-        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
+        await addDoc(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp(), isFeatured: false });
       }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
@@ -263,7 +263,7 @@ function ProjectsTab() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'projects'), orderBy('title', 'asc'));
+    return query(collection(firestore, 'projects'), orderBy('createdAt', 'desc'));
   }, [firestore]);
     
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
@@ -282,6 +282,37 @@ function ProjectsTab() {
       toast({ variant: "destructive", title: "Error", description: "Failed to delete project." });
     }
   };
+
+  const handleSetFeatured = async (projectIdToFeature: string) => {
+    if (!firestore) return;
+    
+    const batch = writeBatch(firestore);
+    
+    // Find the current featured project
+    const featuredQuery = query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
+    const featuredSnapshot = await getDocs(featuredQuery);
+    
+    // Un-feature the current featured project
+    if (!featuredSnapshot.empty) {
+      const currentFeaturedDoc = featuredSnapshot.docs[0];
+      if (currentFeaturedDoc.id !== projectIdToFeature) {
+        batch.update(currentFeaturedDoc.ref, { isFeatured: false });
+      }
+    }
+    
+    // Feature the new project
+    const newFeaturedRef = doc(firestore, 'projects', projectIdToFeature);
+    batch.update(newFeaturedRef, { isFeatured: true });
+    
+    try {
+      await batch.commit();
+      toast({ title: "Success", description: "Featured project updated." });
+    } catch (error) {
+      console.error('Error setting featured project:', error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to update featured project." });
+    }
+  };
+
 
   return (
     <Card>
@@ -321,10 +352,17 @@ function ProjectsTab() {
             )}
             {!isLoading && projects && projects.map((project) => (
               <TableRow key={project.id}>
-                <TableCell>{project.title}</TableCell>
+                <TableCell>
+                  {project.title}
+                  {project.isFeatured && <Star className="h-4 w-4 inline-block ml-2 text-yellow-500 fill-yellow-400" />}
+                </TableCell>
                 <TableCell>{project.location}</TableCell>
                 <TableCell>{project.status}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-1">
+                  <Button variant="outline" size="sm" onClick={() => handleSetFeatured(project.id!)} disabled={project.isFeatured}>
+                    <Star className="h-4 w-4 mr-1" />
+                    Feature
+                  </Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
@@ -353,7 +391,7 @@ function ProjectsTab() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(project.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(project.id!)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -402,7 +440,7 @@ export default function AdminDashboard() {
         </div>
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <Tabs defaultValue="messages">
+        <Tabs defaultValue="projects">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
             <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
