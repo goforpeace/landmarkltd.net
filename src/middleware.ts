@@ -9,12 +9,14 @@ async function isSessionValid(request: NextRequest): Promise<boolean> {
     return false;
   }
 
+  // We need to construct an absolute URL to fetch from the API route
   const url = request.nextUrl.clone();
   url.pathname = '/api/auth/session';
   
   try {
     const response = await fetch(url.toString(), {
       headers: {
+        // Forward the cookie to the API route for validation
         'Cookie': `admin-auth-token=${tokenCookie.value}`,
       },
     });
@@ -33,17 +35,18 @@ async function isSessionValid(request: NextRequest): Promise<boolean> {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Protect the dashboard
+  // Protect the dashboard and related assets
   if (path.startsWith('/ad-panel/dashboard')) {
     const valid = await isSessionValid(request);
     if (!valid) {
+      // If session is not valid, redirect to the login page
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/ad-panel';
-      loginUrl.search = '';
+      loginUrl.search = ''; // Clear any query params
       return NextResponse.redirect(loginUrl);
     }
   }
-  // If user is logged in and tries to access login page, redirect to dashboard
+  // If user is logged in and tries to access the login page, redirect them to the dashboard
   else if (path === '/ad-panel') {
     const valid = await isSessionValid(request);
     if (valid) {
@@ -54,9 +57,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Allow the request to proceed
   return NextResponse.next();
 }
 
+// Define the paths this middleware should apply to
 export const config = {
   matcher: ['/ad-panel/dashboard/:path*', '/ad-panel'],
 };
