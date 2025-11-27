@@ -1,17 +1,41 @@
-import { getProjectById } from '@/lib/actions';
+'use client';
+
+import { useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import { useDoc, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Project } from '@/lib/types';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, Square, MapPin } from 'lucide-react';
+import { BedDouble, Bath, Square, MapPin, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
-export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const project = await getProjectById(params.id);
+export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+  const firestore = useFirestore();
+  
+  const projectRef = useMemo(() => {
+    if (!firestore || !params.id) return null;
+    return doc(firestore, 'projects', params.id);
+  }, [firestore, params.id]);
+
+  const { data: project, isLoading, error } = useDoc<Project>(projectRef);
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-[80vh]">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (!project && !isLoading) {
+    notFound();
+  }
 
   if (!project) {
-    notFound();
+    return null;
   }
 
   return (
@@ -26,7 +50,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
           <CardContent className="p-0">
             <Carousel className="w-full">
               <CarouselContent>
-                {project.images.map((img, index) => (
+                {project.images && project.images.map((img, index) => (
                   <CarouselItem key={index}>
                     <div className="relative aspect-[16/9] w-full">
                       <Image

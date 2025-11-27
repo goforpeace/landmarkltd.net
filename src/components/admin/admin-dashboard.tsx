@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, LogOut, Mail, Trash2 } from "lucide-react";
+import { Building, LogOut, Mail, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
 import { logout, deleteMessage } from '@/lib/actions';
@@ -21,9 +21,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection } from '@/firebase';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 
 
 function MessagesTab() {
@@ -115,8 +115,15 @@ function MessagesTab() {
   );
 }
 
-function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
-  // This can also be converted to useCollection if projects are managed in Firestore
+function ProjectsTab() {
+  const firestore = useFirestore();
+    const projectsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'projects'), orderBy('title', 'asc'));
+    }, [firestore]);
+    
+    const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
+
   return (
     <Card>
       <CardHeader>
@@ -124,6 +131,7 @@ function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
         <CardDescription>Add, edit, or remove projects.</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Project management UI will go here */}
         <div className="text-center py-10">
           <p className="text-muted-foreground">Project management functionality is coming soon.</p>
         </div>
@@ -134,10 +142,9 @@ function ProjectsTab({ initialProjects }: { initialProjects: Project[] }) {
 
 
 type AdminDashboardProps = {
-    initialMessages: ContactMessage[]; // This can be removed if not pre-fetched
-    initialProjects: Project[];
+    // These props are no longer needed as we fetch client-side
 }
-export default function AdminDashboard({ initialMessages, initialProjects }: AdminDashboardProps) {
+export default function AdminDashboard({}: AdminDashboardProps) {
 
   const handleLogout = async () => {
     await logout();
@@ -170,7 +177,7 @@ export default function AdminDashboard({ initialMessages, initialProjects }: Adm
             <MessagesTab />
           </TabsContent>
           <TabsContent value="projects" className="mt-6">
-            <ProjectsTab initialProjects={initialProjects} />
+            <ProjectsTab />
           </TabsContent>
         </Tabs>
       </main>
