@@ -3,13 +3,11 @@
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { collection, getDocs, doc, getDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { ContactMessage, Project } from './types';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
-import { getAuth, signInAnonymously } from 'firebase/auth';
-import { initializeFirebase as initializeFirebaseClient } from '@/firebase';
-
+import { getAuth } from 'firebase-admin/auth';
 
 // Server actions should use the admin SDK when appropriate for privileged operations
 async function getFirebaseAdmin() {
@@ -31,8 +29,15 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   if (validatedFields.data.pin === HARDCODED_PIN) {
-    // Set a simple session cookie
-    cookies().set('admin-auth-token', 'true', {
+    const { auth } = await getFirebaseAdmin();
+    // Create a generic UID for this session. In a real app, this might be a stable user ID.
+    const uid = `admin_pin_user_${Date.now()}`; 
+    
+    // Create a custom token with an `isAdmin` claim.
+    const customToken = await auth.createCustomToken(uid, { isAdmin: true });
+
+    // Set the custom token in a cookie to be used by the client.
+    cookies().set('admin-auth-token', customToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60, // 1 hour
@@ -75,10 +80,6 @@ export async function submitContactForm(prevState: any, formData: FormData) {
       };
     }
     
-    // For public-facing forms, we don't need admin privileges.
-    // However, if not initialized, let's use it.
-    // This part of your app does not seem to have client-side firebase submission setup
-    // so we use the admin SDK here.
     const { firestore } = await getFirebaseAdmin();
     const docRef = doc(collection(firestore, 'contact_messages'));
     
@@ -103,45 +104,7 @@ export async function submitContactForm(prevState: any, formData: FormData) {
   }
 }
 
-// --- Admin Data Fetching ---
-export async function getProjects(): Promise<Project[]> {
-  const { firestore } = await getFirebaseAdmin();
-  const projectsCollection = collection(firestore, 'projects');
-  const snapshot = await getDocs(projectsCollection);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-}
-
-export async function getProjectById(id: string): Promise<Project | null> {
-    const { firestore } = await getFirebaseAdmin();
-    const projectDoc = doc(firestore, 'projects', id);
-    const snapshot = await getDoc(projectDoc);
-    if (!snapshot.exists()) {
-        return null;
-    }
-    return { id: snapshot.id, ...snapshot.data() } as Project;
-}
-
-export async function getContactMessages(): Promise<ContactMessage[]> {
-  const { firestore } = await getFirebaseAdmin();
-  const messagesCollection = collection(firestore, 'contact_messages');
-  const snapshot = await getDocs(messagesCollection);
-  return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return { 
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt.toDate() 
-      } as ContactMessage
-  });
-}
-
 // --- Admin Data Mutation ---
-export async function addProject(formData: FormData) {
-  // Logic to add a new project
-  console.log('Adding new project:', formData.get('title'));
-  // Revalidate path if necessary
-}
-
 export async function deleteMessage(id: string) {
     const { firestore } = await getFirebaseAdmin();
     const messageDoc = doc(firestore, 'contact_messages', id);

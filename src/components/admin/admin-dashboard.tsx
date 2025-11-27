@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, LogOut, Mail, Trash2, Loader2 } from "lucide-react";
+import { Building, LogOut, Mail, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
 import { logout, deleteMessage } from '@/lib/actions';
@@ -21,9 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore, useAuth, initiateAnonymousSignIn } from '@/firebase';
+import { useCollection, useFirestore, useAuth, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { signInWithCustomToken } from 'firebase/auth';
+import Cookies from 'js-cookie';
 
 
 function MessagesTab() {
@@ -141,18 +143,24 @@ function ProjectsTab() {
 }
 
 
-type AdminDashboardProps = {
-    // These props are no longer needed as we fetch client-side
-}
-export default function AdminDashboard({}: AdminDashboardProps) {
+export default function AdminDashboard() {
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
   useEffect(() => {
-    if (auth && !auth.currentUser) {
-      initiateAnonymousSignIn(auth);
+    if (auth && !user && !isUserLoading) {
+      const token = Cookies.get('admin-auth-token');
+      if (token) {
+        signInWithCustomToken(auth, token).catch((error) => {
+          console.error("Error signing in with custom token:", error);
+          // Could redirect to login page here
+        });
+      }
     }
-  }, [auth]);
+  }, [auth, user, isUserLoading]);
 
   const handleLogout = async () => {
+    await auth?.signOut();
     await logout();
   }
 
