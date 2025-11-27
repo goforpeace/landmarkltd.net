@@ -143,13 +143,11 @@ const projectSchema = z.object({
   shortDescription: z.string().min(10, "Short description is required."),
   description: z.string().min(20, "Full description is required."),
   images: z.string().url("Please enter a valid image URL.").min(1, "At least one image URL is required."),
-  details: z.object({
-    bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
-    bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
-    area: z.coerce.number().min(1, "Area must be greater than 0."),
-    location: z.string().min(3, "Location is required."),
-    status: z.enum(['Completed', 'Under Construction', 'Sold']),
-  }),
+  bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
+  bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
+  area: z.coerce.number().min(1, "Area must be greater than 0."),
+  location: z.string().min(3, "Location is required."),
+  status: z.enum(['Completed', 'Under Construction', 'Sold']),
 });
 
 function ProjectForm({ project, onSave }: { project?: Project, onSave: () => void }) {
@@ -160,13 +158,11 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
       images: Array.isArray(project?.images) ? project?.images[0] : project?.images || "",
-      details: {
-        bedrooms: project?.details.bedrooms || 0,
-        bathrooms: project?.details.bathrooms || 0,
-        area: project?.details.area || 0,
-        location: project?.details.location || "",
-        status: project?.details.status || "Under Construction",
-      },
+      bedrooms: project?.bedrooms || 0,
+      bathrooms: project?.bathrooms || 0,
+      area: project?.area || 0,
+      location: project?.location || "",
+      status: project?.status || "Under Construction",
     }
   });
   const { toast } = useToast();
@@ -223,32 +219,32 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="location">Location</Label>
-          <Input id="location" {...register("details.location")} />
-          {errors.details?.location && <p className="text-sm text-destructive">{errors.details.location.message}</p>}
+          <Input id="location" {...register("location")} />
+          {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
         </div>
          <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select id="status" {...register("details.status")} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <select id="status" {...register("status")} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
             <option>Under Construction</option>
             <option>Completed</option>
             <option>Sold</option>
           </select>
-          {errors.details?.status && <p className="text-sm text-destructive">{errors.details.status.message}</p>}
+          {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="bedrooms">Bedrooms</Label>
-          <Input id="bedrooms" type="number" {...register("details.bedrooms")} />
-          {errors.details?.bedrooms && <p className="text-sm text-destructive">{errors.details.bedrooms.message}</p>}
+          <Input id="bedrooms" type="number" {...register("bedrooms")} />
+          {errors.bedrooms && <p className="text-sm text-destructive">{errors.bedrooms.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="bathrooms">Bathrooms</Label>
-          <Input id="bathrooms" type="number" {...register("details.bathrooms")} />
-          {errors.details?.bathrooms && <p className="text-sm text-destructive">{errors.details.bathrooms.message}</p>}
+          <Input id="bathrooms" type="number" {...register("bathrooms")} />
+          {errors.bathrooms && <p className="text-sm text-destructive">{errors.bathrooms.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="area">Area (sqft)</Label>
-          <Input id="area" type="number" {...register("details.area")} />
-          {errors.details?.area && <p className="text-sm text-destructive">{errors.details.area.message}</p>}
+          <Input id="area" type="number" {...register("area")} />
+          {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
         </div>
       </div>
       <DialogFooter>
@@ -326,8 +322,8 @@ function ProjectsTab() {
             {!isLoading && projects && projects.map((project) => (
               <TableRow key={project.id}>
                 <TableCell>{project.title}</TableCell>
-                <TableCell>{project.details.location}</TableCell>
-                <TableCell>{project.details.status}</TableCell>
+                <TableCell>{project.location}</TableCell>
+                <TableCell>{project.status}</TableCell>
                 <TableCell className="text-right">
                   <Dialog>
                     <DialogTrigger asChild>

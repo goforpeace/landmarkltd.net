@@ -30,13 +30,17 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     );
   }
 
-  if (!project && !isLoading) {
+  if (error || (!project && !isLoading)) {
     notFound();
   }
-
+  
   if (!project) {
+    // This case should be handled by the notFound() call above, but it's good practice
+    // to have it here to satisfy TypeScript and prevent rendering with null data.
     return null;
   }
+
+  const images = Array.isArray(project.images) ? project.images : [project.images];
 
   return (
     <div className="bg-background py-12 md:py-20">
@@ -50,7 +54,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
           <CardContent className="p-0">
             <Carousel className="w-full">
               <CarouselContent>
-                {project.images && project.images.map((img, index) => (
+                {images.map((img, index) => (
                   <CarouselItem key={index}>
                     <div className="relative aspect-[16/9] w-full">
                       <Image
@@ -83,28 +87,28 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground"><MapPin className="w-5 h-5 text-primary" /> Location</span>
-                    <span className="font-semibold">{project.details.location}</span>
+                    <span className="font-semibold">{project.location}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground"><BedDouble className="w-5 h-5 text-primary" /> Bedrooms</span>
-                    <span className="font-semibold">{project.details.bedrooms}</span>
+                    <span className="font-semibold">{project.bedrooms}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground"><Bath className="w-5 h-5 text-primary" /> Bathrooms</span>
-                    <span className="font-semibold">{project.details.bathrooms}</span>
+                    <span className="font-semibold">{project.bathrooms}</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground"><Square className="w-5 h-5 text-primary" /> Area (sqft)</span>
-                    <span className="font-semibold">{project.details.area.toLocaleString()}</span>
+                    <span className="font-semibold">{project.area.toLocaleString()}</span>
                 </div>
                 <Separator />
                  <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-muted-foreground">Status</span>
-                    <Badge variant={project.details.status === 'Completed' ? 'default' : project.details.status === 'Sold' ? 'destructive' : 'secondary'} className="bg-primary/80 text-primary-foreground">
-                        {project.details.status}
+                    <Badge variant={project.status === 'Completed' ? 'default' : project.status === 'Sold' ? 'destructive' : 'secondary'} className="bg-primary/80 text-primary-foreground">
+                        {project.status}
                     </Badge>
                 </div>
               </CardContent>
