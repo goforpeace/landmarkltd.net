@@ -28,7 +28,7 @@ export default function AuthForm() {
   const [state, formAction] = useActionState(login, initialState);
   const { toast } = useToast();
   const router = useRouter();
-  const auth = useAuth(); // Get the auth instance
+  const auth = useAuth(); 
 
   useEffect(() => {
     // This effect runs when the server action completes
