@@ -1,7 +1,6 @@
 'use server';
 
 import { z } from 'zod';
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { collection, addDoc, deleteDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
@@ -28,13 +27,10 @@ export async function login(prevState: any, formData: FormData) {
 
   if (validatedFields.data.pin === HARDCODED_PIN) {
     const { auth } = await getFirebaseAdmin();
-    // Create a generic UID for this session. In a real app, this might be a stable user ID.
     const uid = `admin_pin_user_${Date.now()}`; 
     
-    // Create a custom token with an `isAdmin` claim.
     const customToken = await auth.createCustomToken(uid, { isAdmin: true });
 
-    // Set the custom token in a cookie to be used by the client.
     cookies().set('admin-auth-token', customToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -42,7 +38,8 @@ export async function login(prevState: any, formData: FormData) {
       path: '/',
     });
     
-    redirect('/ad-panel/dashboard');
+    // Instead of redirecting, return a success state
+    return { success: true, message: 'Login successful' };
   } else {
     return { message: 'Invalid PIN.' };
   }
@@ -50,7 +47,7 @@ export async function login(prevState: any, formData: FormData) {
 
 export async function logout() {
   cookies().delete('admin-auth-token');
-  redirect('/ad-panel');
+  // The client will handle the redirect
 }
 
 
@@ -107,6 +104,5 @@ export async function deleteMessage(id: string) {
     const { firestore } = await getFirebaseAdmin();
     const messageDoc = doc(firestore, 'contact_messages', id);
     await deleteDoc(messageDoc);
-    revalidatePath('/ad-panel/dashboard');
-    console.log(`Deleted message with id: ${id}`);
+revalidatePath('/ad-panel/dashboard');
 }

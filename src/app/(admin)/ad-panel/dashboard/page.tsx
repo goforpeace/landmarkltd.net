@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithCustomToken } from 'firebase/auth';
-import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import AdminDashboard from '@/components/admin/admin-dashboard';
 
@@ -11,35 +10,64 @@ export default function DashboardPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [isSigningIn, setIsSigningIn] = useState(true);
 
   useEffect(() => {
-    if (isUserLoading || !auth) return; // Wait for auth service and user status
+    if (isUserLoading || !auth) return;
 
-    const token = Cookies.get('admin-auth-token');
-    
-    // If there is no user session, try to sign in with the token from the cookie
-    if (!user && token) {
-      signInWithCustomToken(auth, token).catch((error) => {
-        console.error("Admin sign-in failed:", error);
-        // If token is invalid, clear it and redirect to login
-        Cookies.remove('admin-auth-token');
-        router.push('/ad-panel');
-      });
-    } else if (!token) {
-        // If there's no token at all, redirect to login
-        router.push('/ad-panel');
+    if (user) {
+      // If user is already loaded (from a previous session restore), no need to sign in again.
+      setIsSigningIn(false);
+      return;
     }
+
+    // This function will be called to attempt sign-in
+    const attemptSignIn = async () => {
+      try {
+        const response = await fetch('/api/auth/session-login');
+        if (!response.ok) {
+          throw new Error('Could not get session token.');
+        }
+        const { token } = await response.json();
+        
+        if (token) {
+          await signInWithCustomToken(auth, token);
+          // onAuthStateChanged will handle the user state update
+        } else {
+          // If no token, redirect to login
+          router.push('/ad-panel');
+        }
+      } catch (error) {
+        console.error("Admin sign-in failed:", error);
+        router.push('/ad-panel');
+      } finally {
+        setIsSigningIn(false);
+      }
+    };
+    
+    attemptSignIn();
 
   }, [auth, user, isUserLoading, router]);
   
-  // While checking auth state or if there's no user, show a loader
-  if (isUserLoading || !user) {
+  if (isUserLoading || isSigningIn) {
     return (
-        <div className="flex h-screen items-center justify-center">
-            <p>Loading...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // After loading, if there's still no user, redirect.
+  // This can happen if the token was invalid.
+  if (!user) {
+    router.push('/ad-panel');
+    return (
+       <div className="flex h-screen items-center justify-center">
+         <p>Redirecting...</p>
+       </div>
     )
   }
 
+  // If we have a user, show the dashboard
   return <AdminDashboard />;
 }

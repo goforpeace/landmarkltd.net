@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Building, LogOut, Mail, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
-import { logout, deleteMessage } from '@/lib/actions';
+import { logout } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -20,9 +20,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore, useAuth, useUser } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useAuth } from '@/firebase';
+import { collection, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useRouter } from "next/navigation";
 
 
 function MessagesTab() {
@@ -36,13 +37,22 @@ function MessagesTab() {
     const { toast } = useToast();
 
     const handleDelete = async (id: string) => {
+        if (!firestore) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Firestore is not available.",
+            });
+            return;
+        }
         try {
-            await deleteMessage(id);
+            await deleteDoc(doc(firestore, "contact_messages", id));
             toast({
                 title: "Success",
                 description: "Message deleted successfully.",
             });
         } catch (error) {
+            console.error("Failed to delete message:", error);
             toast({
                 variant: "destructive",
                 title: "Error",
@@ -142,10 +152,16 @@ function ProjectsTab() {
 
 export default function AdminDashboard() {
   const auth = useAuth();
+  const router = useRouter();
   
   const handleLogout = async () => {
-    await auth?.signOut();
+    if (auth) {
+      await auth.signOut();
+    }
+    // Call server action to delete cookie
     await logout();
+    // Force a reload and redirect to the login page
+    router.push('/ad-panel');
   }
 
 
@@ -158,11 +174,11 @@ export default function AdminDashboard() {
                     <Building className="h-8 w-8 text-primary" />
                     <h1 className="text-xl font-bold text-primary font-headline">Admin Dashboard</h1>
                 </div>
-                <form action={handleLogout}>
-                    <Button variant="ghost" type="submit">
-                        <LogOut className="mr-2 h-4 w-4" /> Logout
-                    </Button>
-                </form>
+                
+                <Button variant="ghost" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+                
             </div>
         </div>
       </header>

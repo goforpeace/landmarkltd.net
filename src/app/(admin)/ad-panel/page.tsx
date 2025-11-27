@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import AuthForm from '@/components/admin/auth-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Building } from 'lucide-react';
@@ -13,17 +12,19 @@ export default function AdminLoginPage() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If the user is already signed in (from a valid token), redirect to the dashboard.
+    // If the user object exists, it means they are signed in.
+    // This is handled by the onAuthStateChanged listener in FirebaseProvider.
     if (!isUserLoading && user) {
       router.push('/ad-panel/dashboard');
     }
   }, [user, isUserLoading, router]);
 
-  // While checking for user, you can show a loader or nothing
+  // Show a loader while checking for a user, or if we are about to redirect.
   if (isUserLoading || user) {
     return <div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>;
   }
   
+  // If no user and not loading, show the login form.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 dark:bg-gray-900">
         <div className="flex items-center gap-2 mb-6">
