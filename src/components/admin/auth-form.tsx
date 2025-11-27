@@ -38,12 +38,8 @@ export default function AuthForm() {
   return (
     <form action={formAction} className="space-y-4">
         <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <Label htmlFor="pin">PIN Code</Label>
+            <Input id="pin" name="pin" type="password" required maxLength={4} pattern="\d{4}" placeholder="Enter 4-digit PIN" />
         </div>
       <SubmitButton />
     </form>

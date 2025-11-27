@@ -3,51 +3,42 @@
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { initializeFirebase } from '@/firebase/server';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, getDocs, doc, getDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { ContactMessage, Project } from './types';
 import { revalidatePath } from 'next/cache';
+import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
 
-async function getFirebase() {
-  return initializeFirebase();
+// Server actions should use the admin SDK when appropriate for privileged operations
+async function getFirebaseAdmin() {
+  return initializeFirebaseAdmin();
 }
 
-// --- Firebase Authentication ---
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+
+// --- PIN Authentication ---
+const pinSchema = z.object({
+  pin: z.string().length(4, 'PIN must be 4 digits.'),
 });
 
 export async function login(prevState: any, formData: FormData) {
-  try {
-    const validatedFields = loginSchema.safeParse({
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
+  const HARDCODED_PIN = '5206';
+  const validatedFields = pinSchema.safeParse({ pin: formData.get('pin') });
 
-    if (!validatedFields.success) {
-      return { message: 'Invalid email or password format.' };
-    }
-    
-    const { auth } = await getFirebase();
-    const userCredential = await signInWithEmailAndPassword(auth, validatedFields.data.email, validatedFields.data.password);
-    const idToken = await userCredential.user.getIdToken();
+  if (!validatedFields.success) {
+    return { message: 'Invalid PIN format.' };
+  }
 
-    cookies().set('admin-auth-token', idToken, {
+  if (validatedFields.data.pin === HARDCODED_PIN) {
+    // Set a simple session cookie
+    cookies().set('admin-auth-token', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60, // 1 hour
       path: '/',
     });
-    
-  } catch (error: any) {
-    if (error.code === 'auth/invalid-credential') {
-      return { message: 'Invalid email or password.' };
-    }
-    return { message: 'An unexpected error occurred during login.' };
+    redirect('/ad-panel/dashboard');
+  } else {
+    return { message: 'Invalid PIN.' };
   }
-  redirect('/ad-panel/dashboard');
 }
 
 export async function logout() {
@@ -80,11 +71,16 @@ export async function submitContactForm(prevState: any, formData: FormData) {
       };
     }
     
-    const { firestore } = await getFirebase();
-    const messagesCollection = collection(firestore, 'contact_messages');
+    // For public-facing forms, we don't need admin privileges.
+    // However, if not initialized, let's use it.
+    // This part of your app does not seem to have client-side firebase submission setup
+    // so we use the admin SDK here.
+    const { firestore } = await getFirebaseAdmin();
+    const docRef = doc(collection(firestore, 'contact_messages'));
     
-    await addDoc(messagesCollection, {
+    await addDoc(collection(firestore, 'contact_messages'), {
       ...validatedFields.data,
+      id: docRef.id,
       createdAt: serverTimestamp(),
     });
 
@@ -105,14 +101,14 @@ export async function submitContactForm(prevState: any, formData: FormData) {
 
 // --- Admin Data Fetching ---
 export async function getProjects(): Promise<Project[]> {
-  const { firestore } = await getFirebase();
+  const { firestore } = await getFirebaseAdmin();
   const projectsCollection = collection(firestore, 'projects');
   const snapshot = await getDocs(projectsCollection);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-    const { firestore } = await getFirebase();
+    const { firestore } = await getFirebaseAdmin();
     const projectDoc = doc(firestore, 'projects', id);
     const snapshot = await getDoc(projectDoc);
     if (!snapshot.exists()) {
@@ -122,7 +118,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 export async function getContactMessages(): Promise<ContactMessage[]> {
-  const { firestore } = await getFirebase();
+  const { firestore } = await getFirebaseAdmin();
   const messagesCollection = collection(firestore, 'contact_messages');
   const snapshot = await getDocs(messagesCollection);
   return snapshot.docs.map(doc => {
@@ -143,7 +139,7 @@ export async function addProject(formData: FormData) {
 }
 
 export async function deleteMessage(id: string) {
-    const { firestore } = await getFirebase();
+    const { firestore } = await getFirebaseAdmin();
     const messageDoc = doc(firestore, 'contact_messages', id);
     await deleteDoc(messageDoc);
     revalidatePath('/ad-panel/dashboard');

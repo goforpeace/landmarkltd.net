@@ -11,8 +11,8 @@ export default function AdminLoginPage() {
         </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Admin Login</CardTitle>
-          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+          <CardTitle>Admin Access</CardTitle>
+          <CardDescription>Enter your PIN to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <AuthForm />
