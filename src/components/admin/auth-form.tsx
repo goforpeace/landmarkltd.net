@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { initiateAnonymousSignIn } from '@/firebase';
+import { useAuth } from '@/firebase';
+
 
 const initialState = { message: '' };
 
@@ -25,6 +28,8 @@ function SubmitButton() {
 export default function AuthForm() {
   const [state, formAction] = useActionState(login, initialState);
   const { toast } = useToast();
+  const auth = useAuth();
+
 
     useEffect(() => {
         if(state?.message) {
@@ -40,7 +45,7 @@ export default function AuthForm() {
     <form action={formAction} className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="pin">PIN Code</Label>
-            <Input id="pin" name="pin" type="password" required maxLength={4} pattern="\d{4}" placeholder="Enter 4-digit PIN" />
+            <Input id="pin" name="pin" type="password" required maxLength={4} pattern="\\d{4}" placeholder="Enter 4-digit PIN" />
         </div>
       <SubmitButton />
     </form>

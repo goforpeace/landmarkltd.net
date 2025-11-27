@@ -7,6 +7,9 @@ import { collection, getDocs, doc, getDoc, addDoc, deleteDoc, serverTimestamp } 
 import type { ContactMessage, Project } from './types';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeFirebaseAdmin } from '@/firebase/server';
+import { getAuth, signInAnonymously } from 'firebase/auth';
+import { initializeFirebase as initializeFirebaseClient } from '@/firebase';
+
 
 // Server actions should use the admin SDK when appropriate for privileged operations
 async function getFirebaseAdmin() {
@@ -35,6 +38,7 @@ export async function login(prevState: any, formData: FormData) {
       maxAge: 60 * 60, // 1 hour
       path: '/',
     });
+    
     redirect('/ad-panel/dashboard');
   } else {
     return { message: 'Invalid PIN.' };

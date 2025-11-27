@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 
@@ -145,6 +145,12 @@ type AdminDashboardProps = {
     // These props are no longer needed as we fetch client-side
 }
 export default function AdminDashboard({}: AdminDashboardProps) {
+  const auth = useAuth();
+  useEffect(() => {
+    if (auth && !auth.currentUser) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth]);
 
   const handleLogout = async () => {
     await logout();
