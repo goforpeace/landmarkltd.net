@@ -29,9 +29,10 @@ export default function AuthForm() {
 
   useEffect(() => {
     if (state?.success) {
-      // Redirect to dashboard on successful login
+      // Redirect to dashboard on successful login from server action.
+      // The dashboard page will handle the session sign-in.
       router.push('/ad-panel/dashboard');
-    } else if (state?.message) {
+    } else if (state?.message && !state.success) {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',

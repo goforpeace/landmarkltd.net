@@ -19,22 +19,24 @@ const pinSchema = z.object({
 
 export async function login(prevState: any, formData: FormData) {
   const HARDCODED_PIN = '5206';
+  const STATIC_ADMIN_UID = 'the-one-and-only-admin-user'; // A static, predictable UID for the admin.
+
   const validatedFields = pinSchema.safeParse({ pin: formData.get('pin') });
 
   if (!validatedFields.success) {
-    return { message: 'Invalid PIN format.' };
+    return { message: 'Invalid PIN format.', success: false };
   }
 
   if (validatedFields.data.pin === HARDCODED_PIN) {
     const { auth, firestore } = await getFirebaseAdmin();
-    const uid = `admin_pin_user_${Date.now()}`;
     
-    // Grant admin role by creating a document in the roles_admin collection
-    const adminRoleRef = doc(firestore, 'roles_admin', uid);
-    await setDoc(adminRoleRef, { grantedAt: serverTimestamp() });
+    // Ensure the admin role document exists for our static admin UID.
+    // Using setDoc with merge is idempotent and safe to call on every login.
+    const adminRoleRef = doc(firestore, 'roles_admin', STATIC_ADMIN_UID);
+    await setDoc(adminRoleRef, { grantedAt: serverTimestamp() }, { merge: true });
 
-    // Create a custom token for this user
-    const customToken = await auth.createCustomToken(uid);
+    // Create a custom token for the static admin user.
+    const customToken = await auth.createCustomToken(STATIC_ADMIN_UID);
 
     cookies().set('admin-auth-token', customToken, {
       httpOnly: true,
@@ -45,7 +47,7 @@ export async function login(prevState: any, formData: FormData) {
     
     return { success: true, message: 'Login successful' };
   } else {
-    return { message: 'Invalid PIN.' };
+    return { message: 'Invalid PIN.', success: false };
   }
 }
 
@@ -76,17 +78,17 @@ export async function submitContactForm(prevState: any, formData: FormData) {
       return {
         message: 'Validation failed. Please check your input.',
         errors: validatedFields.error.flatten().fieldErrors,
+        success: false,
       };
     }
     
     const { firestore } = await getFirebaseAdmin();
-    const docRef = doc(collection(firestore, 'contact_messages'));
+    const docData = {
+        ...validatedFields.data,
+        createdAt: serverTimestamp(),
+    };
     
-    await addDoc(collection(firestore, 'contact_messages'), {
-      ...validatedFields.data,
-      id: docRef.id,
-      createdAt: serverTimestamp(),
-    });
+    await addDoc(collection(firestore, 'contact_messages'), docData);
 
     revalidatePath('/ad-panel/dashboard');
 
@@ -99,6 +101,7 @@ export async function submitContactForm(prevState: any, formData: FormData) {
     console.error('Failed to submit contact form:', e);
     return {
       message: 'An unexpected error occurred. Please try again.',
+      success: false,
     };
   }
 }
