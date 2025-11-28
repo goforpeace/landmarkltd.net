@@ -36,7 +36,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     notFound();
   }
   
-  const images = Array.isArray(project.images) ? project.images : (project.images ? [project.images] : []);
+  const images = Array.isArray(project.images) ? project.images : [];
 
   return (
     <div className="bg-background py-12 md:py-20">

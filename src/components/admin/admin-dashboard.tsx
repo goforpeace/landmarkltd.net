@@ -173,19 +173,16 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         const projectRef = doc(firestore, 'projects', project.id);
         const projectData = {
           ...data,
-          id: project.id,
           images: [data.images],
-          isFeatured: project.isFeatured || false,
         };
         updateDocumentNonBlocking(projectRef, projectData);
         toast({ title: "Success", description: `Project updated successfully.` });
       } else {
         // This is a new project, create it
         const newDocRef = doc(collection(firestore, 'projects'));
-        const newId = newDocRef.id;
         const projectData = {
           ...data,
-          id: newId, // Storing the ID within the document
+          id: newDocRef.id, // Storing the ID within the document
           images: [data.images],
           isFeatured: false,
           createdAt: serverTimestamp(),
