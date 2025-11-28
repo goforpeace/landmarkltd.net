@@ -9,7 +9,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export default function FeaturedProjectSection() {
     const firestore = useFirestore();
@@ -58,40 +58,35 @@ export default function FeaturedProjectSection() {
             <h2 className="font-headline text-4xl md:text-5xl font-bold text-primary">Featured Project</h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">A glimpse into our commitment to excellence and luxury living.</p>
         </div>
-        <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="lg:mt-[-50px] z-10">
-                <Card className="shadow-2xl border-2 border-primary/10">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl text-primary">{featuredProject.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="mb-6 text-foreground/80">{featuredProject.shortDescription}</p>
-                        <Button asChild className="bg-primary hover:bg-primary/90">
-                            <Link href={`/projects/${featuredProject.id}`}>View Details</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:mb-[-50px]">
-                <Card className="overflow-hidden shadow-2xl">
-                     {imageUrl ? (
-                        <div className="aspect-w-4 aspect-h-3">
-                            <Image
-                                src={imageUrl}
-                                alt={featuredProject.title}
-                                width={800}
-                                height={600}
-                                className="w-full h-full object-cover"
-                                data-ai-hint="modern architecture"
-                            />
-                        </div>
-                    ) : (
-                        <div className="aspect-w-4 aspect-h-3 bg-muted flex items-center justify-center">
-                            <p className="text-muted-foreground">No image available</p>
-                        </div>
-                    )}
-                </Card>
-            </div>
+        <div className="max-w-4xl mx-auto">
+            <Card className="overflow-hidden shadow-2xl border-2 border-primary/10">
+                {imageUrl ? (
+                    <div className="aspect-video relative">
+                        <Image
+                            src={imageUrl}
+                            alt={featuredProject.title}
+                            fill
+                            className="object-cover"
+                            data-ai-hint="modern architecture"
+                        />
+                    </div>
+                ) : (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                        <p className="text-muted-foreground">No image available</p>
+                    </div>
+                )}
+                <CardHeader className="text-center">
+                    <CardTitle className="font-headline text-3xl text-primary">{featuredProject.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                    <p className="mb-8 text-foreground/80 max-w-2xl mx-auto">{featuredProject.shortDescription}</p>
+                    <Button asChild size="lg">
+                        <Link href={`/projects/${featuredProject.id}`}>
+                            View Details <ArrowRight className="ml-2 h-5 w-5" />
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
       </div>
     </section>
