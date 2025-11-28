@@ -13,15 +13,16 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProjectImageGallery from '@/components/project-image-gallery';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 function FlatTypeDetails({ flatType }: { flatType: FlatType }) {
   return (
-    <div className="space-y-3">
-       <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-muted-foreground"><Square className="h-5 w-5 text-primary" /> Area</span>
-            <span className="font-semibold">{flatType.area.toLocaleString()} sqft</span>
-        </div>
-        <Separator />
+    <div className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-muted-foreground"><BedDouble className="h-5 w-5 text-primary" /> Bedrooms</span>
             <span className="font-semibold">{flatType.bedrooms}</span>
@@ -105,18 +106,23 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             </Card>
 
             {project.flatTypes && project.flatTypes.length > 0 && (
-              <div className="mb-8 space-y-6">
+              <div className="mb-8 space-y-4">
                   <h2 className="font-headline text-2xl font-semibold text-primary">Available Units</h2>
-                  {project.flatTypes.map((flatType, index) => (
-                      <Card key={index} className="bg-card/50">
-                          <CardHeader>
-                              <CardTitle className="font-headline text-xl text-primary">{flatType.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                              <FlatTypeDetails flatType={flatType} />
-                          </CardContent>
-                      </Card>
-                  ))}
+                  <Accordion type="single" collapsible className="w-full">
+                    {project.flatTypes.map((flatType, index) => (
+                      <AccordionItem key={index} value={`item-${index}`} className="border-b">
+                        <AccordionTrigger className="flex w-full items-center justify-between py-4 text-left font-semibold text-lg hover:no-underline">
+                           <div className="flex items-baseline gap-3">
+                            <span className="text-primary">{flatType.name}</span>
+                            <span className="text-sm font-normal text-muted-foreground">{flatType.area.toLocaleString()} sqft</span>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                           <FlatTypeDetails flatType={flatType} />
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
               </div>
             )}
             
