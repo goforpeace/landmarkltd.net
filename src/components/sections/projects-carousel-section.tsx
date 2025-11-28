@@ -86,8 +86,8 @@ export default function ProjectsCarouselSection() {
                 </CarouselItem>
               )})}
             </CarouselContent>
-            <CarouselPrevious className="ml-14" />
-            <CarouselNext className="mr-14" />
+            <CarouselPrevious />
+            <CarouselNext />
           </Carousel>
         )}
 
