@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { services } from '@/lib/data';
 import Link from 'next/link';
+import { MessageSquare } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ServicesSection() {
   const whatsappLink = "https://wa.me/8801959162641";
@@ -24,9 +26,20 @@ export default function ServicesSection() {
               </CardHeader>
               <CardContent className="flex flex-col flex-grow">
                 <p className="text-muted-foreground flex-grow mb-6">{service.description}</p>
-                <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-auto">
-                    <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">Learn More</Link>
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button asChild variant="outline" size="icon" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-auto mx-auto">
+                          <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                            <MessageSquare className="h-5 w-5" />
+                          </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Contact on WhatsApp</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </CardContent>
             </Card>
           ))}
