@@ -33,7 +33,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
@@ -49,7 +49,7 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const handleAddNote = async () => {
+    const handleAddNote = () => {
         if (!note.trim()) {
             toast({ variant: 'destructive', title: 'Note cannot be empty.' });
             return;
@@ -57,33 +57,41 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         if (!firestore) return;
 
         setIsSubmitting(true);
-        try {
-            const requestRef = doc(firestore, 'callback_requests', request.id);
-            
-            const newNote = {
-                text: note,
-                createdAt: serverTimestamp(),
-            };
+        const requestRef = doc(firestore, 'callback_requests', request.id);
+        
+        const newNote = {
+            text: note,
+            createdAt: serverTimestamp(),
+        };
 
-            const updateData: { notes: any; status?: 'Contacted' } = {
-                notes: arrayUnion(newNote)
-            };
+        const updateData: { notes: any; status?: 'Contacted' } = {
+            notes: arrayUnion(newNote)
+        };
 
-            if (request.status === 'New') {
-                updateData.status = 'Contacted';
-            }
-
-            await updateDoc(requestRef, updateData);
-            
-            toast({ title: 'Note added successfully.' });
-            setNote('');
-
-        } catch (error) {
-            console.error("Error adding note:", error);
-            toast({ variant: 'destructive', title: 'Failed to add note.' });
-        } finally {
-            setIsSubmitting(false);
+        if (request.status === 'New') {
+            updateData.status = 'Contacted';
         }
+
+        updateDoc(requestRef, updateData)
+            .then(() => {
+                toast({ title: 'Note added successfully.' });
+                setNote('');
+            })
+            .catch((error) => {
+                console.error("Error adding note:", error);
+                toast({ variant: 'destructive', title: 'Failed to add note.' });
+                errorEmitter.emit(
+                  'permission-error',
+                  new FirestorePermissionError({
+                    path: requestRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData,
+                  })
+                )
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
     };
     
     // Sort notes, newest first
@@ -359,7 +367,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
 
       if (project?.id) {
         const projectRef = doc(firestore, 'projects', project.id);
-        updateDocumentNonBlocking(projectRef, projectData);
+        setDocumentNonBlocking(projectRef, projectData, { merge: true });
         toast({ title: "Success", description: `Project updated successfully.` });
       } else {
         const newDocRef = doc(collection(firestore, 'projects'));
@@ -712,5 +720,7 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
 
     
