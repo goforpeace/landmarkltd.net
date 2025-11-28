@@ -14,9 +14,8 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import ProjectImageGallery from '@/components/project-image-gallery';
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const id = params.id;
   
   const projectRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
