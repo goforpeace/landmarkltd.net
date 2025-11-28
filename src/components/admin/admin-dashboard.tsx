@@ -34,7 +34,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion, updateDoc, getDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,7 +49,7 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const handleAddNote = () => {
+    const handleAddNote = async () => {
         if (!note.trim()) {
             toast({ variant: 'destructive', title: 'Note cannot be empty.' });
             return;
@@ -57,64 +57,54 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         if (!firestore) return;
 
         setIsSubmitting(true);
-        const requestRef = doc(firestore, 'callback_requests', request.id);
+        try {
+            const requestRef = doc(firestore, 'callback_requests', request.id);
 
-        const updateDataForFirestore = {
-            notes: arrayUnion({
+            // Read-Modify-Write Pattern
+            const docSnap = await getDoc(requestRef);
+
+            if (!docSnap.exists()) {
+                throw new Error("Document does not exist.");
+            }
+
+            const existingNotes = docSnap.data().notes || [];
+            
+            const newNote = {
                 text: note,
-                createdAt: serverTimestamp(),
-            }),
-            ...(request.status === 'New' && { status: 'Contacted' }),
-        };
-        
-        // This object is for the error context. It must be fully JSON-serializable.
-        // We simulate the array union by creating a new array.
-        const updatedNotesForErrorContext = (request.notes || []).map(n => ({
-            ...n,
-            createdAt: (n.createdAt as any).seconds 
-                ? new Date((n.createdAt as any).seconds * 1000).toISOString() 
-                : n.createdAt instanceof Date ? n.createdAt.toISOString() : new Date().toISOString(),
-        }));
-        updatedNotesForErrorContext.push({ text: note, createdAt: new Date().toISOString() });
+                createdAt: new Date(), // Use client-side timestamp
+            };
 
-        const updateDataForErrorContext = {
-            notes: updatedNotesForErrorContext,
-            ...(request.status === 'New' && { status: 'Contacted' }),
-        };
-        
-        updateDoc(requestRef, updateDataForFirestore)
-            .then(() => {
-                toast({ title: 'Note added successfully.' });
-                setNote('');
-            })
-            .catch((error) => {
-                console.error("Error adding note:", error);
-                toast({ variant: 'destructive', title: 'Failed to add note.' });
-                errorEmitter.emit(
-                  'permission-error',
-                  new FirestorePermissionError({
-                    path: requestRef.path,
-                    operation: 'update',
-                    requestResourceData: updateDataForErrorContext,
-                  })
-                );
-            })
-            .finally(() => {
-                setIsSubmitting(false);
+            const updatedNotes = [...existingNotes, newNote];
+
+            await updateDoc(requestRef, {
+                notes: updatedNotes,
+                ...(request.status === 'New' && { status: 'Contacted' }),
             });
+            
+            toast({ title: 'Note added successfully.' });
+            setNote('');
+
+        } catch (error) {
+            console.error("Error adding note:", error);
+            toast({ variant: 'destructive', title: 'Failed to add note.', description: (error as Error).message });
+             errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: doc(firestore, 'callback_requests', request.id).path,
+                operation: 'update',
+                requestResourceData: { note: note }, // simplified error data
+              })
+            );
+        } finally {
+             setIsSubmitting(false);
+        }
     };
     
     // Sort notes, newest first
     const sortedNotes = request.notes ? [...request.notes].sort((a, b) => {
-        const timeA = a.createdAt ? ((a.createdAt as any).seconds || 0) : 0;
-        const timeB = b.createdAt ? ((b.createdAt as any).seconds || 0) : 0;
-        if (timeA === 0 && a.createdAt instanceof Date) {
-            return -1;
-        }
-         if (timeB === 0 && b.createdAt instanceof Date) {
-            return 1;
-        }
-        return timeB - timeA;
+        const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any).seconds * 1000;
+        const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any).seconds * 1000;
+        return dateB - dateA;
     }) : [];
 
     return (
@@ -156,10 +146,8 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
                                             <div key={index} className="text-sm p-2 bg-background rounded-md">
                                                 <p className="whitespace-pre-wrap">{n.text}</p>
                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                    {n.createdAt && (n.createdAt as any).seconds 
-                                                        ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') 
-                                                        : n.createdAt instanceof Date 
-                                                        ? 'Saving...' 
+                                                    {n.createdAt 
+                                                        ? format(n.createdAt instanceof Date ? n.createdAt : new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') 
                                                         : 'Just now'}
                                                 </p>
                                             </div>
@@ -740,3 +728,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
