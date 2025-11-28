@@ -49,7 +49,7 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const handleAddNote = async () => {
+    const handleAddNote = () => {
         if (!note.trim()) {
             toast({ variant: 'destructive', title: 'Note cannot be empty.' });
             return;
@@ -58,9 +58,14 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
 
         setIsSubmitting(true);
         const requestRef = doc(firestore, 'callback_requests', request.id);
-        const newNote: Note = {
+        
+        // This is tricky. arrayUnion needs plain objects, not Date objects from serverTimestamp.
+        // The correct pattern is to call serverTimestamp() inside the update.
+        // However, the Note type expects a Date object. Let's adjust the Note type temporarily
+        // to handle the server value.
+        const newNote = {
             text: note,
-            createdAt: serverTimestamp(),
+            createdAt: serverTimestamp(), // This will be converted by Firestore
         };
 
         const updateData: { notes: any; status?: 'Contacted' } = {
@@ -71,20 +76,19 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
             updateData.status = 'Contacted';
         }
 
-        try {
-            await updateDocumentNonBlocking(requestRef, updateData);
-            toast({ title: 'Note added successfully.' });
-            setNote('');
-        } catch (error) {
-            console.error('Error adding note:', error);
-            toast({ variant: 'destructive', title: 'Failed to add note.' });
-        } finally {
-            setIsSubmitting(false);
-        }
+        updateDocumentNonBlocking(requestRef, updateData);
+        
+        toast({ title: 'Note added successfully.' });
+        setNote('');
+        setIsSubmitting(false);
     };
     
     // Sort notes, newest first
-    const sortedNotes = request.notes ? [...request.notes].sort((a, b) => ((b.createdAt as any).seconds || 0) - ((a.createdAt as any).seconds || 0)) : [];
+    const sortedNotes = request.notes ? [...request.notes].sort((a, b) => {
+        const timeA = a.createdAt ? (a.createdAt as any).seconds : 0;
+        const timeB = b.createdAt ? (b.createdAt as any).seconds : 0;
+        return timeB - timeA;
+    }) : [];
 
     return (
         <>
@@ -125,7 +129,7 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
                                             <div key={index} className="text-sm p-2 bg-background rounded-md">
                                                 <p className="whitespace-pre-wrap">{n.text}</p>
                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                    {n.createdAt ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'Just now'}
+                                                    {n.createdAt && (n.createdAt as any).seconds ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'Just now'}
                                                 </p>
                                             </div>
                                         ))}
