@@ -14,7 +14,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Building tomorrow's landmarks, today.
+              Where every square foot tells a story
             </p>
           </div>
           <div>
