@@ -29,7 +29,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-gray-600 transition-colors hover:text-primary"
+              className="text-base font-semibold text-gray-600 transition-colors hover:text-primary"
               prefetch={false}
             >
               {link.label}
