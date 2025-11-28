@@ -134,7 +134,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
 
       {/* Lightbox Dialog */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-2 bg-transparent border-0 shadow-none flex items-center justify-center">
+        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-0 shadow-none flex items-center justify-center">
           <DialogTitle className="sr-only">{`${title} - Image Preview`}</DialogTitle>
           <Carousel
             setApi={setLightboxApi}
