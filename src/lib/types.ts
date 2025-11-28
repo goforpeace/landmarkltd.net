@@ -2,8 +2,8 @@
 export type Project = {
   id?: string;
   title: string;
-  description: string;
   shortDescription: string;
+  description: string;
   images: string[];
   bedrooms: number;
   bathrooms: number;

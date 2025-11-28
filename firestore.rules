@@ -39,8 +39,8 @@ service cloud.firestore {
      * @description Manages contact form submissions. Anyone can create, only admins can read/delete.
      */
     match /contact_messages/{contactMessageId} {
-      allow get, list, update, delete: if isAdmin();
-      allow create: if true; // Anyone can submit a message
+      allow get, list, delete: if isAdmin();
+      allow create: if true;
     }
 
     /**

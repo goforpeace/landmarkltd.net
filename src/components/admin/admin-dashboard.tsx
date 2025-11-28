@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { useCollection, useFirestore, useAuth, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
@@ -38,6 +39,7 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 function MessagesTab() {
@@ -87,7 +89,9 @@ function MessagesTab() {
           <TableBody>
             {isLoading && (
                  <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">Loading messages...</TableCell>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                    </TableCell>
                 </TableRow>
             )}
             {!isLoading && messages && messages.length > 0 ? messages.map((message) => (
@@ -119,7 +123,7 @@ function MessagesTab() {
               </TableRow>
             )) : !isLoading && (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">No messages yet.</TableCell>
+                    <TableCell colSpan={6} className="h-24 text-center">No messages yet.</TableCell>
                 </TableRow>
             )}
           </TableBody>
@@ -142,13 +146,13 @@ const projectSchema = z.object({
 });
 
 function ProjectForm({ project, onSave }: { project?: Project, onSave: () => void }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project?.images[0] : (project?.images as unknown as string || ""),
+      images: Array.isArray(project?.images) ? project?.images[0] : (project?.images || ""),
       bedrooms: project?.bedrooms || 0,
       bathrooms: project?.bathrooms || 0,
       area: project?.area || 0,
@@ -172,13 +176,10 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
 
     try {
       if (project?.id) {
-        // Update existing project
         updateDocumentNonBlocking(doc(firestore, 'projects', project.id), {
           ...projectData,
-          createdAt: project.createdAt || serverTimestamp() // Preserve original timestamp
         });
       } else {
-        // Add new project with timestamp
         addDocumentNonBlocking(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
       }
       toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
@@ -219,7 +220,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         </div>
          <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select id="status" {...register("status")} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <select id="status" {...register("status")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
             <option>Under Construction</option>
             <option>Completed</option>
             <option>Sold</option>
@@ -236,13 +237,16 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
           <Input id="bathrooms" type="number" {...register("bathrooms")} />
           {errors.bathrooms && <p className="text-sm text-destructive">{errors.bathrooms.message}</p>}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <Label htmlFor="area">Area (sqft)</Label>
           <Input id="area" type="number" {...register("area")} />
           {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
         </div>
       </div>
       <DialogFooter>
+        <DialogClose asChild>
+           <Button variant="ghost">Cancel</Button>
+        </DialogClose>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {project?.id ? "Update Project" : "Add Project"}
@@ -255,7 +259,8 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
 
 function ProjectsTab() {
   const firestore = useFirestore();
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'projects'), orderBy('createdAt', 'desc'));
@@ -282,7 +287,7 @@ function ProjectsTab() {
     const featuredQuery = query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
     const featuredSnapshot = await getDocs(featuredQuery);
     
-    // Un-feature the current featured project
+    // Un-feature the current featured project if it exists and is not the one we are featuring
     if (!featuredSnapshot.empty) {
       const currentFeaturedDoc = featuredSnapshot.docs[0];
       if (currentFeaturedDoc.id !== projectIdToFeature) {
@@ -311,7 +316,7 @@ function ProjectsTab() {
           <CardTitle>Manage Projects</CardTitle>
           <CardDescription>Add, edit, or remove projects.</CardDescription>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
           <DialogTrigger asChild>
             <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
           </DialogTrigger>
@@ -320,7 +325,7 @@ function ProjectsTab() {
               <DialogTitle>Add New Project</DialogTitle>
               <DialogDescription>Fill in the details for the new project.</DialogDescription>
             </DialogHeader>
-            <ProjectForm onSave={() => setIsFormOpen(false)} />
+            <ProjectForm onSave={() => setIsAddFormOpen(false)} />
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -337,20 +342,22 @@ function ProjectsTab() {
           <TableBody>
              {isLoading && (
                  <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">Loading projects...</TableCell>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                    </TableCell>
                 </TableRow>
             )}
             {!isLoading && projects && projects.map((project) => (
               <TableRow key={project.id}>
                 <TableCell>
                   {project.title}
-                  {project.isFeatured && <Star className="h-4 w-4 inline-block ml-2 text-yellow-500 fill-yellow-400" />}
+                  {project.isFeatured && <Star className="ml-2 inline-block h-4 w-4 fill-yellow-400 text-yellow-500" />}
                 </TableCell>
                 <TableCell>{project.location}</TableCell>
                 <TableCell>{project.status}</TableCell>
-                <TableCell className="text-right space-x-1">
+                <TableCell className="space-x-1 text-right">
                   <Button variant="outline" size="sm" onClick={() => handleSetFeatured(project.id!)} disabled={project.isFeatured}>
-                    <Star className="h-4 w-4 mr-1" />
+                    <Star className="mr-1 h-4 w-4" />
                     Feature
                   </Button>
                   <Dialog>
@@ -363,7 +370,7 @@ function ProjectsTab() {
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
                       <ProjectForm project={project} onSave={() => {
-                        // A bit of a hack to close the dialog, would be better to manage state
+                        // A bit of a hack to close the dialog, but works for now.
                         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
                       }} />
                     </DialogContent>
@@ -390,7 +397,7 @@ function ProjectsTab() {
             ))}
              {!isLoading && (!projects || projects.length === 0) && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">No projects found. Add one!</TableCell>
+                    <TableCell colSpan={4} className="h-24 text-center">No projects found. Add one!</TableCell>
                 </TableRow>
             )}
           </TableBody>
@@ -407,7 +414,6 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
-      // The parent component will handle re-rendering to show the login form.
     }
   }
 
@@ -416,10 +422,10 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Building className="h-8 w-8 text-primary" />
-                    <h1 className="text-xl font-bold text-primary font-headline">Admin Dashboard</h1>
+                    <h1 className="font-headline text-xl font-bold text-primary">Admin Dashboard</h1>
                 </div>
                 
                 <Button variant="ghost" onClick={handleLogout}>
@@ -431,7 +437,7 @@ export default function AdminDashboard() {
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs defaultValue="projects">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+          <TabsList className="mx-auto grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
           </TabsList>
