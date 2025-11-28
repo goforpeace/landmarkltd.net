@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -135,7 +135,7 @@ const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   shortDescription: z.string().min(10, "Short description is required."),
   description: z.string().min(20, "Full description is required."),
-  images: z.string().min(1, "At least one image URL is required."),
+  images: z.array(z.object({ value: z.string().url("Invalid URL") })).min(1, "At least one image URL is required."),
   bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
   bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
   area: z.coerce.number().min(1, "Area must be greater than 0."),
@@ -143,14 +143,16 @@ const projectSchema = z.object({
   status: z.enum(['Completed', 'Under Construction', 'Sold']),
 });
 
+type ProjectFormValues = z.infer<typeof projectSchema>;
+
 function ProjectForm({ project, onSave }: { project?: Project, onSave: () => void }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project.images.join(', ') : "",
+      images: Array.isArray(project?.images) ? project.images.map(url => ({ value: url })) : [{ value: "" }],
       bedrooms: project?.bedrooms || 0,
       bathrooms: project?.bathrooms || 0,
       area: project?.area || 0,
@@ -158,43 +160,42 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       status: project?.status || "Under Construction",
     }
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "images"
+  });
+
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const processSubmit = async (data: z.infer<typeof projectSchema>) => {
+  const processSubmit = async (data: ProjectFormValues) => {
     if (!firestore) {
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
 
     try {
-      const imageUrls = data.images.split(',').map(url => url.trim()).filter(url => url);
-      
-      if (imageUrls.length === 0) {
-        toast({ variant: "destructive", title: "Error", description: "Please provide at least one valid image URL." });
-        return;
-      }
+      const imageUrls = data.images.map(img => img.value);
+
+      const projectData = {
+        ...data,
+        images: imageUrls,
+      };
 
       if (project?.id) {
-        // This is an existing project, update it
         const projectRef = doc(firestore, 'projects', project.id);
-        const projectData = {
-          ...data,
-          images: imageUrls,
-        };
         updateDocumentNonBlocking(projectRef, projectData);
         toast({ title: "Success", description: `Project updated successfully.` });
       } else {
-        // This is a new project, create it
         const newDocRef = doc(collection(firestore, 'projects'));
-        const projectData = {
-          ...data,
-          id: newDocRef.id, // Storing the ID within the document
-          images: imageUrls,
+        const newProjectData = {
+          ...projectData,
+          id: newDocRef.id,
           isFeatured: false,
           createdAt: serverTimestamp(),
         };
-        setDocumentNonBlocking(newDocRef, projectData, {});
+        setDocumentNonBlocking(newDocRef, newProjectData, {});
         toast({ title: "Success", description: `Project added successfully.` });
       }
       onSave();
@@ -221,15 +222,41 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         <Textarea id="description" {...register("description")} />
         {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
       </div>
-       <div className="space-y-2">
-        <Label htmlFor="images">Image URLs (comma-separated)</Label>
-        <Textarea id="images" {...register("images")} placeholder="https://..., https://..." />
-        {errors.images && <p className="text-sm text-destructive">{errors.images.message}</p>}
+      
+      <div className="space-y-2">
+        <Label>Image URLs</Label>
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-center gap-2">
+            <Input
+              {...register(`images.${index}.value`)}
+              placeholder="https://example.com/image.jpg"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={() => remove(index)}
+              disabled={fields.length <= 1}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+         {errors.images && <p className="text-sm text-destructive">{errors.images.message || errors.images.root?.message}</p>}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => append({ value: "" })}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Image URL
+        </Button>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="location">Location</Label>
-          <Input id="location" {...register("location")} />
+          <Label htmlFor="location">Location URL</Label>
+          <Input id="location" {...register("location")} placeholder="https://maps.app.goo.gl/..."/>
           {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
         </div>
          <div className="space-y-2">
@@ -381,6 +408,7 @@ function ProjectsTab() {
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
                       <ProjectForm project={project} onSave={() => {
+                        // A bit of a hack to close the dialog
                         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
                       }} />
                     </DialogContent>
