@@ -63,11 +63,9 @@ export default function FeaturedProjectSection() {
                 <Card className="shadow-2xl border-2 border-primary/10">
                     <CardHeader>
                         <CardTitle className="font-headline text-3xl text-primary">{featuredProject.title}</CardTitle>
-                        <CardDescription className="text-base">{featuredProject.shortDescription}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground mb-2"><strong>Location:</strong> {featuredProject.location}</p>
-                        <p className="mb-6 text-foreground/80">{featuredProject.description.substring(0, 150)}...</p>
+                        <p className="mb-6 text-foreground/80">{featuredProject.shortDescription}</p>
                         <Button asChild className="bg-primary hover:bg-primary/90">
                             <Link href={`/projects/${featuredProject.id}`}>View Details</Link>
                         </Button>
