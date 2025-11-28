@@ -9,9 +9,11 @@ import type { Project } from '@/lib/types';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, Square, MapPin, Loader2 } from 'lucide-react';
+import { BedDouble, Bath, Square, MapPin, Loader2, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useMemoFirebase } from '@/firebase/provider';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
@@ -86,8 +88,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             <Card className="bg-card/50">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-5 w-5 text-primary" /> Location</span>
-                    <span className="font-semibold">{project.location}</span>
+                  <span className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-5 w-5 text-primary" /> Location</span>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={project.location} target="_blank" rel="noopener noreferrer">
+                      View Location <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
