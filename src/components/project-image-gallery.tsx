@@ -18,6 +18,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
   const [mainApi, setMainApi] = useState<EmblaCarouselType>();
   const [thumbApi, setThumbApi] = useState<EmblaCarouselType>();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxApi, setLightboxApi] = useState<EmblaCarouselType>();
 
   const [mainRef, mainApiHook] = useEmblaCarousel({
     loop: true,
@@ -68,9 +69,15 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
     setIsLightboxOpen(true);
   };
   
+  useEffect(() => {
+    if (isLightboxOpen && lightboxApi) {
+        lightboxApi.scrollTo(selectedIndex, true);
+    }
+  }, [isLightboxOpen, lightboxApi, selectedIndex]);
+
   if (!images || images.length === 0) {
      return (
-        <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-muted shadow-inner md:aspect-[4/3]">
+        <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-muted shadow-inner">
             <p className="text-muted-foreground">No images available</p>
         </div>
     );
@@ -96,13 +103,18 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
                     className="object-cover"
                     data-ai-hint="architecture detail"
                     priority={index === 0}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 md:left-4" />
-          <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 md:right-4" />
+          {images.length > 1 && (
+            <>
+              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 md:left-4" />
+              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 md:right-4" />
+            </>
+          )}
         </Carousel>
 
 
@@ -112,9 +124,11 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
             <div className="flex -ml-2">
                 {images.map((img, index) => (
                 <div
-                    className={`relative min-w-0 flex-[0_0_25%] md:flex-[0_0_20%] pl-2 cursor-pointer rounded-md overflow-hidden ring-2 ring-transparent transition-all`}
+                    className={`relative min-w-0 flex-[0_0_25%] md:flex-[0_0_20%] pl-2 cursor-pointer rounded-md overflow-hidden ring-offset-background ring-offset-2 focus:outline-none focus:ring-2 focus:ring-primary`}
                     onClick={() => onThumbClick(index)}
                     key={index}
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && onThumbClick(index)}
                 >
                     <div
                     className={`absolute inset-0 rounded-md ring-2 ring-primary transition-opacity ${
@@ -128,10 +142,11 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
                         fill
                         className="object-cover"
                         data-ai-hint="architecture detail"
+                        sizes="100px"
                     />
                      <div
                         className={`absolute inset-0 bg-black/50 transition-opacity ${
-                        index === selectedIndex ? 'opacity-0' : 'opacity-100'
+                        index === selectedIndex ? 'opacity-0' : 'opacity-100 hover:opacity-50'
                         }`}
                     />
                     </div>
@@ -144,20 +159,22 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
 
       {/* Lightbox Dialog */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-5xl w-full p-2 bg-transparent border-0 shadow-none">
+        <DialogContent className="max-w-7xl w-full h-[90vh] p-2 bg-background border-0 shadow-none flex items-center justify-center">
           <Carousel
+            setApi={setLightboxApi}
             opts={{ startIndex: selectedIndex, loop: true }}
-            className="w-full"
+            className="w-full h-full"
           >
-            <CarouselContent>
+            <CarouselContent className="h-full">
               {images.map((img, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative aspect-video w-full">
+                <CarouselItem key={index} className="h-full flex items-center justify-center">
+                  <div className="relative w-full h-full">
                     <Image
                       src={img}
                       alt={`${title} image ${index + 1}`}
                       fill
                       className="object-contain"
+                      sizes="100vw"
                     />
                   </div>
                 </CarouselItem>
@@ -165,8 +182,8 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
             </CarouselContent>
             {images.length > 1 && (
               <>
-                <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 md:left-[-50px]" />
-                <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 md:right-[-50px]" />
+                <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 md:left-4" />
+                <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 md:right-4" />
               </>
             )}
           </Carousel>
