@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, LogOut, Mail, Trash2, Edit, PlusCircle, Loader2, Star } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
@@ -414,7 +414,7 @@ function ProjectsTab() {
 }
 
 
-export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+export default function AdminDashboard() {
   const auth = useAuth();
 
   useEffect(() => {
@@ -434,11 +434,6 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <Building className="h-8 w-8 text-primary" />
                     <h1 className="font-headline text-xl font-bold text-primary">Admin Dashboard</h1>
                 </div>
-                
-                <Button variant="ghost" onClick={onLogout}>
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
-                </Button>
-                
             </div>
         </div>
       </header>
