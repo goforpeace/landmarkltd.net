@@ -6,7 +6,7 @@ import { useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Project, FlatType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, Square, MapPin, Loader2, ArrowRight, Home } from 'lucide-react';
+import { BedDouble, Bath, Square, MapPin, Loader2, ArrowRight, Home, Phone, MessageSquare } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ function FlatTypeDetails({ flatType }: { flatType: FlatType }) {
 
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = params.id;
   const firestore = useFirestore();
   
   const projectRef = useMemoFirebase(() => {
@@ -66,6 +66,8 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   }
   
   const images = Array.isArray(project.images) ? project.images.filter(img => img && typeof img === 'string') : [];
+  const phoneNumber = "+8801920709034";
+  const whatsappLink = `https://wa.me/${phoneNumber.replace('+', '')}`;
 
   return (
     <div className="bg-background py-8 md:py-16">
@@ -125,6 +127,24 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   </Accordion>
               </div>
             )}
+
+            <Card className="mb-8 bg-secondary">
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl font-semibold text-primary">Get in Touch</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row gap-4">
+                    <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                        <a href={`tel:${phoneNumber}`}>
+                            <Phone className="mr-2 h-4 w-4" /> Call Now
+                        </a>
+                    </Button>
+                    <Button asChild variant="outline" className="w-full border-green-500 text-green-600 hover:bg-green-500 hover:text-white">
+                        <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                            <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
+                        </a>
+                    </Button>
+                </CardContent>
+            </Card>
             
             <div>
                 <h2 className="mb-4 font-headline text-2xl font-semibold text-primary">Project Description</h2>
