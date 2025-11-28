@@ -206,97 +206,6 @@ function CallbackRequestsTab() {
     );
 }
 
-function MessagesTab() {
-    const firestore = useFirestore();
-    const messagesQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'contact_messages'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
-    
-    const { data: messages, isLoading } = useCollection<ContactMessage>(messagesQuery);
-    const { toast } = useToast();
-
-    const handleDelete = async (id: string) => {
-        if (!firestore) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Firestore is not available.",
-            });
-            return;
-        }
-        deleteDocumentNonBlocking(doc(firestore, "contact_messages", id));
-        toast({
-            title: "Success",
-            description: "Message deleted successfully.",
-        });
-    };
-    
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Contact Messages</CardTitle>
-        <CardDescription>Messages submitted through the contact form.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Received</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Message</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="mx-auto h-8 w-8 animate-spin" />
-                    </TableCell>
-                </TableRow>
-            )}
-            {!isLoading && messages && messages.length > 0 ? messages.map((message) => (
-              <TableRow key={message.id}>
-                <TableCell>{message.createdAt ? format(new Date((message.createdAt as any).seconds * 1000), 'dd MMM yyyy') : 'N/A'}</TableCell>
-                <TableCell>{message.name}</TableCell>
-                <TableCell>{message.email}</TableCell>
-                <TableCell>{message.phone}</TableCell>
-                <TableCell className="max-w-xs truncate">{message.message}</TableCell>
-                <TableCell className="text-right">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the message.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(message.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </TableCell>
-              </TableRow>
-            )) : !isLoading && (
-                <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">No messages yet.</TableCell>
-                </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
 const flatTypeSchema = z.object({
   name: z.string().min(1, "Type name is required."),
   area: z.coerce.number().min(1, "Area must be greater than 0."),
@@ -706,17 +615,13 @@ export default function AdminDashboard() {
         </div>
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <Tabs defaultValue="projects">
-          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-3">
+        <Tabs defaultValue="callbacks">
+          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-2">
             <TabsTrigger value="callbacks"><PhoneCall className="mr-2 h-4 w-4"/>Callbacks</TabsTrigger>
-            <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
           </TabsList>
            <TabsContent value="callbacks" className="mt-6">
             <CallbackRequestsTab />
-          </TabsContent>
-          <TabsContent value="messages" className="mt-6">
-            <MessagesTab />
           </TabsContent>
           <TabsContent value="projects" className="mt-6">
             <ProjectsTab />

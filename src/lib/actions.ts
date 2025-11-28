@@ -37,6 +37,7 @@ export async function submitContactForm(prevState: any, formData: FormData) {
         createdAt: FieldValue.serverTimestamp(),
     });
 
+    // Even though the tab is gone, revalidating can be useful if you add it back
     revalidatePath('/ad-panel');
 
     return {
