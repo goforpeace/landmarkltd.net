@@ -16,11 +16,11 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gray-100 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
           <Building className="h-7 w-7 text-primary" />
-          <span className="font-headline text-xl font-bold text-primary">
+          <span className="font-headline text-xl font-bold text-gray-800">
             Landmark New Homes
           </span>
         </Link>
@@ -29,7 +29,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
+              className="text-sm font-medium text-gray-600 transition-colors hover:text-primary"
               prefetch={false}
             >
               {link.label}
@@ -40,7 +40,7 @@ export default function Navbar() {
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
+                <Menu className="h-6 w-6 text-gray-800" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
