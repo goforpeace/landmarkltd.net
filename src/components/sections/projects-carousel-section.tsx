@@ -77,7 +77,7 @@ export default function ProjectsCarouselSection() {
                       <CardContent className="p-4 flex flex-col flex-grow bg-card">
                         <h3 className="font-headline text-xl font-semibold text-primary">{project.title}</h3>
                         <p className="text-muted-foreground text-sm mt-1 flex-grow">{project.shortDescription.substring(0, 80)}...</p>
-                        <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
+                        <Button asChild variant="default" size="sm" className="mt-4 w-full">
                           <Link href={`/projects/${project.id}`}>View Project</Link>
                         </Button>
                       </CardContent>
