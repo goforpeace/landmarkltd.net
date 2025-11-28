@@ -59,7 +59,6 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         setIsSubmitting(true);
         const requestRef = doc(firestore, 'callback_requests', request.id);
 
-        // This object is for Firestore, using the server timestamp
         const updateDataForFirestore: { notes: any; status?: 'Contacted' } = {
             notes: arrayUnion({
                 text: note,
@@ -67,14 +66,11 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
             }),
         };
         
-        // This object is for the error context, using a client-side date
-        // This prevents a crash if an error occurs because serverTimestamp() is not JSON-serializable
+        // This object is for the error context. It must be fully JSON-serializable.
+        // We simulate the array union by creating a new array.
         const updateDataForErrorContext = {
-            notes: arrayUnion({
-                text: note,
-                createdAt: new Date().toISOString(), 
-            }),
-             status: request.status === 'New' ? 'Contacted' : undefined,
+            notes: [...(request.notes || []).map(n => ({...n, createdAt: (n.createdAt as any).seconds ? new Date((n.createdAt as any).seconds * 1000).toISOString() : n.createdAt})), { text: note, createdAt: new Date().toISOString() }],
+            status: request.status === 'New' ? 'Contacted' : request.status,
         };
 
         if (request.status === 'New') {
@@ -89,7 +85,6 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
             .catch((error) => {
                 console.error("Error adding note:", error);
                 toast({ variant: 'destructive', title: 'Failed to add note.' });
-                // Use the JSON-safe object for the error emitter
                 errorEmitter.emit(
                   'permission-error',
                   new FirestorePermissionError({
@@ -730,9 +725,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
-
-    
-
-    
