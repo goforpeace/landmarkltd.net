@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeAdminFirebase } from '@/firebase/server';
 import { FieldValue } from 'firebase-admin/firestore';
 
-
 // --- Contact Form ---
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -31,16 +30,13 @@ export async function submitContactForm(prevState: any, formData: FormData) {
   }
 
   try {
-    // Use the admin SDK for this server-side operation.
     const { firestore } = initializeAdminFirebase();
     
-    // Use the Admin SDK's 'add' method which returns a promise.
     await firestore.collection('contact_messages').add({
         ...validatedFields.data,
         createdAt: FieldValue.serverTimestamp(),
     });
 
-    // Revalidate the path to the admin panel to show the new message.
     revalidatePath('/ad-panel');
 
     return {
