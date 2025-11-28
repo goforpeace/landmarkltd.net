@@ -22,7 +22,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="/#projects" className="text-sm hover:text-primary transition-colors">Projects</Link></li>
               <li><Link href="/#services" className="text-sm hover:text-primary transition-colors">Services</Link></li>
-              <li><Link href="/contact" className="text-sm hover:text-primary transition-colors">Contact</Link></li>
+              <li><Link href="/contact" className="text-sm hovertext-primary transition-colors">Contact</Link></li>
               <li><Link href="/#faq" className="text-sm hover:text-primary transition-colors">FAQ</Link></li>
             </ul>
           </div>
@@ -31,7 +31,8 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>House:4/C, Road: 7/B, Sector:09 Uttara Dhaka</li>
               <li>info@landmarkltd.net</li>
-              <li>+880-123-456789</li>
+              <li>+8801920709034</li>
+              <li>+8809649174632</li>
             </ul>
           </div>
           <div>
