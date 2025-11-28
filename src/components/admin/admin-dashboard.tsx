@@ -33,14 +33,12 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useCollection, useFirestore, useAuth, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc, setDoc, addDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useAuth, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, deleteDoc, doc, setDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 
 function MessagesTab() {
     const firestore = useFirestore();
@@ -146,7 +144,7 @@ const projectSchema = z.object({
 });
 
 function ProjectForm({ project, onSave }: { project?: Project, onSave: () => void }) {
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       title: project?.title || "",
@@ -168,19 +166,33 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
       return;
     }
-    const projectData = {
-      ...data,
-      images: [data.images],
-      isFeatured: project?.isFeatured || false,
-    };
 
     try {
       if (project?.id) {
-        updateDocumentNonBlocking(doc(firestore, 'projects', project.id), projectData);
+        // This is an existing project, update it
+        const projectRef = doc(firestore, 'projects', project.id);
+        const projectData = {
+          ...data,
+          id: project.id,
+          images: [data.images],
+          isFeatured: project.isFeatured || false,
+        };
+        updateDocumentNonBlocking(projectRef, projectData);
+        toast({ title: "Success", description: `Project updated successfully.` });
       } else {
-        addDocumentNonBlocking(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
+        // This is a new project, create it
+        const projectRef = doc(collection(firestore, 'projects'));
+        const newId = projectRef.id;
+        const projectData = {
+          ...data,
+          id: newId, // Storing the ID within the document
+          images: [data.images],
+          isFeatured: false,
+          createdAt: serverTimestamp(),
+        };
+        setDocumentNonBlocking(projectRef, projectData, {});
+        toast({ title: "Success", description: `Project added successfully.` });
       }
-      toast({ title: "Success", description: `Project ${project?.id ? 'updated' : 'added'} successfully.` });
       onSave();
     } catch (error) {
       console.error('Error saving project:', error);
@@ -268,8 +280,8 @@ function ProjectsTab() {
   const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-     if (!firestore) {
-      toast({ variant: "destructive", title: "Error", description: "Firestore not initialized." });
+     if (!firestore || !id) {
+      toast({ variant: "destructive", title: "Error", description: "Firestore not initialized or project ID missing." });
       return;
     }
     deleteDocumentNonBlocking(doc(firestore, 'projects', id));
@@ -351,7 +363,7 @@ function ProjectsTab() {
                 <TableCell>{project.location}</TableCell>
                 <TableCell>{project.status}</TableCell>
                 <TableCell className="space-x-1 text-right">
-                  <Button variant="outline" size="sm" onClick={() => handleSetFeatured(project.id!)} disabled={project.isFeatured}>
+                  <Button variant="outline" size="sm" onClick={() => handleSetFeatured(project.id)} disabled={project.isFeatured}>
                     <Star className="mr-1 h-4 w-4" />
                     Feature
                   </Button>
@@ -382,7 +394,7 @@ function ProjectsTab() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(project.id!)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(project.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>

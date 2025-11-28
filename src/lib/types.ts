@@ -1,6 +1,6 @@
 
 export type Project = {
-  id?: string;
+  id: string; // Now mandatory
   title: string;
   shortDescription: string;
   description: string;
