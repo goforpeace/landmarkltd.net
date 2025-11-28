@@ -135,7 +135,7 @@ const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   shortDescription: z.string().min(10, "Short description is required."),
   description: z.string().min(20, "Full description is required."),
-  images: z.string().url("Please enter a valid image URL.").min(1, "At least one image URL is required."),
+  images: z.string().min(1, "At least one image URL is required."),
   bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
   bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
   area: z.coerce.number().min(1, "Area must be greater than 0."),
@@ -150,7 +150,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project?.images[0] : (project?.images || ""),
+      images: Array.isArray(project?.images) ? project.images.join(', ') : "",
       bedrooms: project?.bedrooms || 0,
       bathrooms: project?.bathrooms || 0,
       area: project?.area || 0,
@@ -168,12 +168,19 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
 
     try {
+      const imageUrls = data.images.split(',').map(url => url.trim()).filter(url => url);
+      
+      if (imageUrls.length === 0) {
+        toast({ variant: "destructive", title: "Error", description: "Please provide at least one valid image URL." });
+        return;
+      }
+
       if (project?.id) {
         // This is an existing project, update it
         const projectRef = doc(firestore, 'projects', project.id);
         const projectData = {
           ...data,
-          images: [data.images],
+          images: imageUrls,
         };
         updateDocumentNonBlocking(projectRef, projectData);
         toast({ title: "Success", description: `Project updated successfully.` });
@@ -183,7 +190,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         const projectData = {
           ...data,
           id: newDocRef.id, // Storing the ID within the document
-          images: [data.images],
+          images: imageUrls,
           isFeatured: false,
           createdAt: serverTimestamp(),
         };
@@ -215,8 +222,8 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
       </div>
        <div className="space-y-2">
-        <Label htmlFor="images">Main Image URL</Label>
-        <Input id="images" {...register("images")} placeholder="https://example.com/image.jpg" />
+        <Label htmlFor="images">Image URLs (comma-separated)</Label>
+        <Textarea id="images" {...register("images")} placeholder="https://..., https://..." />
         {errors.images && <p className="text-sm text-destructive">{errors.images.message}</p>}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -451,3 +458,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
