@@ -14,7 +14,8 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import ProjectImageGallery from '@/components/project-image-gallery';
 
-export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
+export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const firestore = useFirestore();
   
   const projectRef = useMemoFirebase(() => {
@@ -37,7 +38,7 @@ export default function ProjectDetailsPage({ params: { id } }: { params: { id: s
   }
   
   // Robustly handle the images array
-  const images = Array.isArray(project.images) ? project.images : [];
+  const images = Array.isArray(project.images) ? project.images.filter(img => img) : [];
 
   return (
     <div className="bg-background py-8 md:py-16">
