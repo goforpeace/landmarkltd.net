@@ -102,7 +102,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
           <div className="flex gap-3">
             {images.map((img, index) => (
               <div
-                className={`relative min-w-0 flex-[0_0_22%] cursor-pointer rounded-md overflow-hidden ring-2 ring-transparent transition-all ${
+                className={`relative min-w-0 flex-[0_0_28%] md:flex-[0_0_22%] cursor-pointer rounded-md overflow-hidden ring-2 ring-transparent transition-all ${
                   index === selectedIndex ? '!ring-primary' : ''
                 }`}
                 onClick={() => onThumbClick(index)}

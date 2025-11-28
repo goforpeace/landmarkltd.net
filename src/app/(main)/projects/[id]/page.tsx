@@ -40,7 +40,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const images = Array.isArray(project.images) ? project.images : [];
 
   return (
-    <div className="bg-background py-12 md:py-20">
+    <div className="bg-background py-8 md:py-16">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
             
