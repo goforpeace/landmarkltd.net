@@ -29,7 +29,7 @@ export default function Footer() {
           <div>
             <h3 className="font-headline font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>123 Realty Lane, Dhaka</li>
+              <li>House:4/C, Road: 7/B, Sector:09 Uttara Dhaka</li>
               <li>info@landmark.com</li>
               <li>+880-123-456789</li>
             </ul>
