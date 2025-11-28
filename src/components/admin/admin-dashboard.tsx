@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,7 +33,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn } from '@/firebase';
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
@@ -181,8 +181,8 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
         toast({ title: "Success", description: `Project updated successfully.` });
       } else {
         // This is a new project, create it
-        const projectRef = doc(collection(firestore, 'projects'));
-        const newId = projectRef.id;
+        const newDocRef = doc(collection(firestore, 'projects'));
+        const newId = newDocRef.id;
         const projectData = {
           ...data,
           id: newId, // Storing the ID within the document
@@ -190,7 +190,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
           isFeatured: false,
           createdAt: serverTimestamp(),
         };
-        setDocumentNonBlocking(projectRef, projectData, {});
+        setDocumentNonBlocking(newDocRef, projectData, {});
         toast({ title: "Success", description: `Project added successfully.` });
       }
       onSave();
@@ -415,6 +415,16 @@ function ProjectsTab() {
 
 
 export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const auth = useAuth();
+
+  useEffect(() => {
+    // We need to ensure the user is authenticated, even anonymously,
+    // to satisfy the security rules for writing data.
+    if (auth && !auth.currentUser) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth]);
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow-sm">
