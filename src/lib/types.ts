@@ -1,5 +1,10 @@
 
 
+export type Note = {
+  text: string;
+  createdAt: { seconds: number; nanoseconds: number; } | Date;
+};
+
 export type FlatType = {
   name: string;
   area: number;
@@ -58,4 +63,5 @@ export type CallbackRequest = {
     seconds: number;
     nanoseconds: number;
   } | Date;
+  notes?: Note[];
 };

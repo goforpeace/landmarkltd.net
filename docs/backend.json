@@ -95,6 +95,17 @@
         "timestamp"
       ]
     },
+    "Note": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Note",
+        "type": "object",
+        "description": "A note with text and a timestamp.",
+        "properties": {
+            "text": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["text", "createdAt"]
+    },
     "CallbackRequest": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "CallbackRequest",
@@ -107,7 +118,11 @@
             "projectId": { "type": "string" },
             "projectName": { "type": "string" },
             "status": { "type": "string", "enum": ["New", "Contacted"] },
-            "createdAt": { "type": "string", "format": "date-time" }
+            "createdAt": { "type": "string", "format": "date-time" },
+            "notes": {
+                "type": "array",
+                "items": { "$ref": "#/backend/entities/Note" }
+            }
         },
         "required": ["id", "name", "phone", "projectId", "projectName", "status", "createdAt"]
     },

@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
-import type { ContactMessage, Project, FlatType, CallbackRequest } from "@/lib/types";
+import type { ContactMessage, Project, FlatType, CallbackRequest, Note } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -34,13 +34,114 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn } from '@/firebase';
-import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
+import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "../ui/badge";
+
+function CallbackRequestRow({ request }: { request: CallbackRequest }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [note, setNote] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleAddNote = async () => {
+        if (!note.trim()) {
+            toast({ variant: 'destructive', title: 'Note cannot be empty.' });
+            return;
+        }
+        if (!firestore) return;
+
+        setIsSubmitting(true);
+        const requestRef = doc(firestore, 'callback_requests', request.id);
+        const newNote: Note = {
+            text: note,
+            createdAt: serverTimestamp(),
+        };
+
+        const updateData: { notes: any; status?: 'Contacted' } = {
+            notes: arrayUnion(newNote)
+        };
+
+        if (request.status === 'New') {
+            updateData.status = 'Contacted';
+        }
+
+        try {
+            await updateDocumentNonBlocking(requestRef, updateData);
+            toast({ title: 'Note added successfully.' });
+            setNote('');
+        } catch (error) {
+            console.error('Error adding note:', error);
+            toast({ variant: 'destructive', title: 'Failed to add note.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    // Sort notes, newest first
+    const sortedNotes = request.notes ? [...request.notes].sort((a, b) => ((b.createdAt as any).seconds || 0) - ((a.createdAt as any).seconds || 0)) : [];
+
+    return (
+        <>
+            <TableRow onClick={() => setIsExpanded(!isExpanded)} className="cursor-pointer">
+                <TableCell>{request.createdAt ? format(new Date((request.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'N/A'}</TableCell>
+                <TableCell>{request.projectName}</TableCell>
+                <TableCell>{request.name}</TableCell>
+                <TableCell>{request.phone}</TableCell>
+                <TableCell><Badge variant={request.status === 'New' ? 'destructive' : 'secondary'}>{request.status}</Badge></TableCell>
+                <TableCell className="text-right">
+                    <Button variant="ghost" size="icon">
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                </TableCell>
+            </TableRow>
+            {isExpanded && (
+                <TableRow>
+                    <TableCell colSpan={6}>
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <h4 className="font-semibold mb-2">Notes</h4>
+                            <div className="space-y-4 mb-4">
+                                <div className="space-y-2">
+                                    <Textarea
+                                        placeholder="Add a new note..."
+                                        value={note}
+                                        onChange={(e) => setNote(e.target.value)}
+                                        rows={2}
+                                    />
+                                    <Button onClick={handleAddNote} disabled={isSubmitting} size="sm">
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Add Note
+                                    </Button>
+                                </div>
+                                 <Separator />
+                                {sortedNotes && sortedNotes.length > 0 ? (
+                                    <div className="max-h-48 overflow-y-auto space-y-3 pr-2">
+                                        {sortedNotes.map((n, index) => (
+                                            <div key={index} className="text-sm p-2 bg-background rounded-md">
+                                                <p className="whitespace-pre-wrap">{n.text}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {n.createdAt ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'Just now'}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No notes yet.</p>
+                                )}
+                            </div>
+                        </div>
+                    </TableCell>
+                </TableRow>
+            )}
+        </>
+    )
+}
+
 
 function CallbackRequestsTab() {
     const firestore = useFirestore();
@@ -50,23 +151,12 @@ function CallbackRequestsTab() {
     }, [firestore]);
 
     const { data: requests, isLoading } = useCollection<CallbackRequest>(requestsQuery);
-    const { toast } = useToast();
-
-    const handleUpdateStatus = (id: string, newStatus: 'Contacted' | 'New') => {
-        if (!firestore) return;
-        const requestRef = doc(firestore, "callback_requests", id);
-        updateDocumentNonBlocking(requestRef, { status: newStatus });
-        toast({
-            title: "Status Updated",
-            description: `Request marked as ${newStatus}.`,
-        });
-    };
     
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Callback Requests</CardTitle>
-                <CardDescription>Leads generated from the "Request a Call" feature.</CardDescription>
+                <CardDescription>Leads generated from the "Request a Call" feature. Click a row to view/add notes.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -77,7 +167,7 @@ function CallbackRequestsTab() {
                             <TableHead>Name</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right">Details</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -89,22 +179,7 @@ function CallbackRequestsTab() {
                             </TableRow>
                         )}
                         {!isLoading && requests && requests.length > 0 ? requests.map((request) => (
-                            <TableRow key={request.id} className={request.status === 'Contacted' ? 'bg-muted/50' : ''}>
-                                <TableCell>{request.createdAt ? format(new Date((request.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'N/A'}</TableCell>
-                                <TableCell>{request.projectName}</TableCell>
-                                <TableCell>{request.name}</TableCell>
-                                <TableCell>{request.phone}</TableCell>
-                                <TableCell>
-                                     <Badge variant={request.status === 'New' ? 'destructive' : 'secondary'}>{request.status}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {request.status === 'New' && (
-                                        <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(request.id, 'Contacted')}>
-                                            <Check className="mr-2 h-4 w-4"/> Mark as Contacted
-                                        </Button>
-                                    )}
-                                </TableCell>
-                            </TableRow>
+                            <CallbackRequestRow key={request.id} request={request} />
                         )) : !isLoading && (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">No callback requests yet.</TableCell>
