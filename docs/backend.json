@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Project": {
@@ -32,6 +33,21 @@
         "isFeatured": {
           "type": "boolean",
           "description": "Indicates if the project is featured on the homepage."
+        },
+        "flatTypes": {
+          "type": "array",
+          "description": "A list of available flat types in the project.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "area": { "type": "number" },
+              "bedrooms": { "type": "number" },
+              "bathrooms": { "type": "number" },
+              "verandas": { "type": "number" }
+            },
+            "required": ["name", "area", "bedrooms", "bathrooms", "verandas"]
+          }
         }
       },
       "required": [

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star } from "lucide-react";
 import { format } from "date-fns";
-import type { ContactMessage, Project } from "@/lib/types";
+import type { ContactMessage, Project, FlatType } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 function MessagesTab() {
     const firestore = useFirestore();
@@ -131,16 +132,22 @@ function MessagesTab() {
   );
 }
 
+const flatTypeSchema = z.object({
+  name: z.string().min(1, "Type name is required."),
+  area: z.coerce.number().min(1, "Area must be greater than 0."),
+  bedrooms: z.coerce.number().min(0, "Bedrooms required."),
+  bathrooms: z.coerce.number().min(0, "Bathrooms required."),
+  verandas: z.coerce.number().min(0, "Verandas required."),
+});
+
 const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   shortDescription: z.string().min(10, "Short description is required."),
   description: z.string().min(20, "Full description is required."),
   images: z.array(z.object({ value: z.string().url("Invalid URL") })).min(1, "At least one image URL is required."),
-  bedrooms: z.coerce.number().min(0, "Bedrooms must be a positive number."),
-  bathrooms: z.coerce.number().min(0, "Bathrooms must be a positive number."),
-  area: z.coerce.number().min(1, "Area must be greater than 0."),
   location: z.string().min(3, "Location is required."),
   status: z.enum(['Completed', 'Under Construction', 'Sold']),
+  flatTypes: z.array(flatTypeSchema).min(1, "At least one flat type is required."),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -152,18 +159,23 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) ? project.images.map(url => ({ value: url })) : [{ value: "" }],
-      bedrooms: project?.bedrooms || 0,
-      bathrooms: project?.bathrooms || 0,
-      area: project?.area || 0,
+      images: Array.isArray(project?.images) && project.images.length > 0 && project.images[0]
+        ? project.images.map(url => ({ value: url }))
+        : [{ value: "" }],
       location: project?.location || "",
       status: project?.status || "Under Construction",
+      flatTypes: project?.flatTypes && project.flatTypes.length > 0 ? project.flatTypes : [{ name: 'Type A', area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 }],
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: imageFields, append: appendImage, remove: removeImage } = useFieldArray({
     control,
     name: "images"
+  });
+
+  const { fields: flatTypeFields, append: appendFlatType, remove: removeFlatType } = useFieldArray({
+    control,
+    name: "flatTypes"
   });
 
   const { toast } = useToast();
@@ -176,7 +188,11 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
 
     try {
-      const imageUrls = data.images.map(img => img.value);
+      const imageUrls = data.images.map(img => img.value).filter(url => url.trim() !== '');
+      if (imageUrls.length === 0) {
+        toast({ variant: "destructive", title: "Validation Error", description: "At least one valid image URL is required." });
+        return;
+      }
 
       const projectData = {
         ...data,
@@ -206,7 +222,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
   };
 
   return (
-    <form onSubmit={handleSubmit(processSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Project Title</Label>
         <Input id="title" {...register("title")} />
@@ -214,18 +230,18 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       </div>
        <div className="space-y-2">
         <Label htmlFor="shortDescription">Short Description</Label>
-        <Input id="shortDescription" {...register("shortDescription")} />
+        <Textarea id="shortDescription" {...register("shortDescription")} />
         {errors.shortDescription && <p className="text-sm text-destructive">{errors.shortDescription.message}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Full Description</Label>
-        <Textarea id="description" {...register("description")} />
+        <Textarea id="description" {...register("description")} rows={5} />
         {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
       </div>
       
       <div className="space-y-2">
         <Label>Image URLs</Label>
-        {fields.map((field, index) => (
+        {imageFields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-2">
             <Input
               {...register(`images.${index}.value`)}
@@ -235,8 +251,8 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
               type="button"
               variant="destructive"
               size="icon"
-              onClick={() => remove(index)}
-              disabled={fields.length <= 1}
+              onClick={() => removeImage(index)}
+              disabled={imageFields.length <= 1}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -247,7 +263,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ value: "" })}
+          onClick={() => appendImage({ value: "" })}
         >
           <PlusCircle className="mr-2 h-4 w-4" /> Add Image URL
         </Button>
@@ -268,22 +284,66 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
           </select>
           {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="bedrooms">Bedrooms</Label>
-          <Input id="bedrooms" type="number" {...register("bedrooms")} />
-          {errors.bedrooms && <p className="text-sm text-destructive">{errors.bedrooms.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bathrooms">Bathrooms</Label>
-          <Input id="bathrooms" type="number" {...register("bathrooms")} />
-          {errors.bathrooms && <p className="text-sm text-destructive">{errors.bathrooms.message}</p>}
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="area">Area (sqft)</Label>
-          <Input id="area" type="number" {...register("area")} />
-          {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
-        </div>
       </div>
+      
+      <Separator />
+
+      <div className="space-y-4">
+          <div className="flex items-center justify-between">
+              <Label className="text-lg font-medium">Flat Types</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendFlatType({ name: `Type ${String.fromCharCode(65 + flatTypeFields.length)}`, area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 })}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Flat Type
+              </Button>
+          </div>
+          {flatTypeFields.map((field, index) => (
+            <div key={field.id} className="rounded-lg border p-4 space-y-4 relative">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-2 md:col-span-1 col-span-2">
+                      <Label htmlFor={`flatTypes.${index}.name`}>Type Name</Label>
+                      <Input id={`flatTypes.${index}.name`} {...register(`flatTypes.${index}.name`)} placeholder="e.g. Type A" />
+                       {errors.flatTypes?.[index]?.name && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.name?.message}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`flatTypes.${index}.area`}>Area (sqft)</Label>
+                      <Input id={`flatTypes.${index}.area`} type="number" {...register(`flatTypes.${index}.area`)} />
+                      {errors.flatTypes?.[index]?.area && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.area?.message}</p>}
+                    </div>
+                     <div className="space-y-2">
+                      <Label htmlFor={`flatTypes.${index}.bedrooms`}>Bedrooms</Label>
+                      <Input id={`flatTypes.${index}.bedrooms`} type="number" {...register(`flatTypes.${index}.bedrooms`)} />
+                      {errors.flatTypes?.[index]?.bedrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bedrooms?.message}</p>}
+                    </div>
+                     <div className="space-y-2">
+                      <Label htmlFor={`flatTypes.${index}.bathrooms`}>Bathrooms</Label>
+                      <Input id={`flatTypes.${index}.bathrooms`} type="number" {...register(`flatTypes.${index}.bathrooms`)} />
+                      {errors.flatTypes?.[index]?.bathrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bathrooms?.message}</p>}
+                    </div>
+                     <div className="space-y-2">
+                      <Label htmlFor={`flatTypes.${index}.verandas`}>Verandas</Label>
+                      <Input id={`flatTypes.${index}.verandas`} type="number" {...register(`flatTypes.${index}.verandas`)} />
+                      {errors.flatTypes?.[index]?.verandas && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.verandas?.message}</p>}
+                    </div>
+                </div>
+                 <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={() => removeFlatType(index)}
+                    disabled={flatTypeFields.length <= 1}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+          ))}
+          {errors.flatTypes && <p className="text-sm text-destructive">{errors.flatTypes.message || errors.flatTypes.root?.message}</p>}
+      </div>
+
       <DialogFooter className="pt-4">
         <DialogClose asChild>
            <Button variant="ghost">Cancel</Button>
@@ -358,12 +418,12 @@ function ProjectsTab() {
           <DialogTrigger asChild>
             <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add New Project</DialogTitle>
               <DialogDescription>Fill in the details for the new project.</DialogDescription>
             </DialogHeader>
-             <div className="max-h-[70vh] overflow-y-auto pr-6">
+             <div className="max-h-[80vh] overflow-y-auto p-1">
                 <ProjectForm onSave={() => setIsAddFormOpen(false)} />
             </div>
           </DialogContent>
@@ -404,12 +464,12 @@ function ProjectsTab() {
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[625px]">
+                    <DialogContent className="sm:max-w-2xl">
                        <DialogHeader>
                         <DialogTitle>Edit Project</DialogTitle>
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
-                       <div className="max-h-[70vh] overflow-y-auto pr-6">
+                       <div className="max-h-[80vh] overflow-y-auto p-1">
                           <ProjectForm project={project} onSave={() => {
                             // A bit of a hack to close the dialog
                             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));

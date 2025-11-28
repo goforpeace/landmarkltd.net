@@ -1,13 +1,20 @@
 
+
+export type FlatType = {
+  name: string;
+  area: number;
+  bedrooms: number;
+  bathrooms: number;
+  verandas: number;
+};
+
 export type Project = {
   id: string; // Now mandatory
   title: string;
   shortDescription: string;
   description: string;
   images: string[];
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
+  flatTypes: FlatType[];
   location: string;
   status: 'Completed' | 'Under Construction' | 'Sold';
   createdAt?: {
