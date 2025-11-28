@@ -41,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "../ui/badge";
+import { Switch } from "../ui/switch";
 
 function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -543,30 +544,36 @@ function ProjectsTab() {
     toast({ title: "Success", description: "Project deleted successfully." });
   };
 
-  const handleSetFeatured = async (projectIdToFeature: string) => {
+  const handleToggleFeatured = async (projectId: string, currentFeaturedState: boolean) => {
     if (!firestore) return;
-    
-    const batch = writeBatch(firestore);
-    
-    const featuredQuery = query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
-    const featuredSnapshot = await getDocs(featuredQuery);
-    
-    if (!featuredSnapshot.empty) {
-      const currentFeaturedDoc = featuredSnapshot.docs[0];
-      if (currentFeaturedDoc.id !== projectIdToFeature) {
-        batch.update(currentFeaturedDoc.ref, { isFeatured: false });
-      }
-    }
-    
-    const newFeaturedRef = doc(firestore, 'projects', projectIdToFeature);
-    batch.update(newFeaturedRef, { isFeatured: true });
-    
+
+    const projectRef = doc(firestore, 'projects', projectId);
+    const newFeaturedState = !currentFeaturedState;
+
     try {
-      await batch.commit();
-      toast({ title: "Success", description: "Featured project updated." });
+        if (newFeaturedState) {
+            // If turning a project ON, we need to turn any other featured project OFF.
+            const batch = writeBatch(firestore);
+            const featuredQuery = query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
+            const featuredSnapshot = await getDocs(featuredQuery);
+
+            if (!featuredSnapshot.empty) {
+                const currentFeaturedDoc = featuredSnapshot.docs[0];
+                if (currentFeaturedDoc.id !== projectId) {
+                    batch.update(currentFeaturedDoc.ref, { isFeatured: false });
+                }
+            }
+            batch.update(projectRef, { isFeatured: true });
+            await batch.commit();
+            toast({ title: "Success", description: "Featured project updated." });
+        } else {
+            // If turning a project OFF, just update it.
+            await updateDoc(projectRef, { isFeatured: false });
+            toast({ title: "Success", description: "Project un-featured." });
+        }
     } catch (error) {
-      console.error('Error setting featured project:', error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to update featured project." });
+        console.error('Error toggling featured project:', error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to update featured project." });
     }
   };
 
@@ -600,30 +607,31 @@ function ProjectsTab() {
               <TableHead>Title</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Featured</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
              {isLoading && (
                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       <Loader2 className="mx-auto h-8 w-8 animate-spin" />
                     </TableCell>
                 </TableRow>
             )}
             {!isLoading && projects && projects.map((project) => (
               <TableRow key={project.id}>
-                <TableCell>
-                  {project.title}
-                  {project.isFeatured && <Star className="ml-2 inline-block h-4 w-4 fill-yellow-400 text-yellow-500" />}
-                </TableCell>
+                <TableCell>{project.title}</TableCell>
                 <TableCell>{project.location}</TableCell>
                 <TableCell>{project.status}</TableCell>
+                <TableCell>
+                  <Switch
+                    checked={project.isFeatured || false}
+                    onCheckedChange={() => handleToggleFeatured(project.id, project.isFeatured || false)}
+                    aria-label="Toggle featured status"
+                  />
+                </TableCell>
                 <TableCell className="space-x-1 text-right">
-                  <Button variant="outline" size="sm" onClick={() => handleSetFeatured(project.id)} disabled={project.isFeatured}>
-                    <Star className="mr-1 h-4 w-4" />
-                    Feature
-                  </Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
@@ -663,7 +671,7 @@ function ProjectsTab() {
             ))}
              {!isLoading && (!projects || projects.length === 0) && (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">No projects found. Add one!</TableCell>
+                    <TableCell colSpan={5} className="h-24 text-center">No projects found. Add one!</TableCell>
                 </TableRow>
             )}
           </TableBody>
