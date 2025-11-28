@@ -17,8 +17,6 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const firestore = useFirestore();
   const id = params.id;
   
-  // Create a stable, memoized reference to the Firestore document.
-  // This is critical to prevent re-renders and ensure the useDoc hook works correctly.
   const projectRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'projects', id);
@@ -26,8 +24,6 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
   const { data: project, isLoading } = useDoc<Project>(projectRef);
 
-  // 1. Unconditionally show a loading state while fetching data.
-  // This prevents the page from showing a 404 error prematurely.
   if (isLoading) {
     return (
         <div className="flex h-[80vh] items-center justify-center">
@@ -36,13 +32,11 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     );
   }
 
-  // 2. Only after loading is complete, if the project is still null, show the notFound page.
   if (!project) {
     notFound();
   }
   
-  // 3. If the project data exists, render the page content.
-  const images = Array.isArray(project.images) ? project.images : [project.images].filter(Boolean) as string[];
+  const images = Array.isArray(project.images) ? project.images : (project.images ? [project.images] : []);
 
   return (
     <div className="bg-background py-12 md:py-20">
