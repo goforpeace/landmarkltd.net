@@ -59,24 +59,29 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         setIsSubmitting(true);
         const requestRef = doc(firestore, 'callback_requests', request.id);
 
-        const updateDataForFirestore: { notes: any; status?: 'Contacted' } = {
+        const updateDataForFirestore = {
             notes: arrayUnion({
                 text: note,
                 createdAt: serverTimestamp(),
             }),
+            ...(request.status === 'New' && { status: 'Contacted' }),
         };
         
         // This object is for the error context. It must be fully JSON-serializable.
         // We simulate the array union by creating a new array.
+        const updatedNotesForErrorContext = (request.notes || []).map(n => ({
+            ...n,
+            createdAt: (n.createdAt as any).seconds 
+                ? new Date((n.createdAt as any).seconds * 1000).toISOString() 
+                : n.createdAt instanceof Date ? n.createdAt.toISOString() : new Date().toISOString(),
+        }));
+        updatedNotesForErrorContext.push({ text: note, createdAt: new Date().toISOString() });
+
         const updateDataForErrorContext = {
-            notes: [...(request.notes || []).map(n => ({...n, createdAt: (n.createdAt as any).seconds ? new Date((n.createdAt as any).seconds * 1000).toISOString() : n.createdAt})), { text: note, createdAt: new Date().toISOString() }],
-            status: request.status === 'New' ? 'Contacted' : request.status,
+            notes: updatedNotesForErrorContext,
+            ...(request.status === 'New' && { status: 'Contacted' }),
         };
-
-        if (request.status === 'New') {
-            updateDataForFirestore.status = 'Contacted';
-        }
-
+        
         updateDoc(requestRef, updateDataForFirestore)
             .then(() => {
                 toast({ title: 'Note added successfully.' });
@@ -101,8 +106,14 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     
     // Sort notes, newest first
     const sortedNotes = request.notes ? [...request.notes].sort((a, b) => {
-        const timeA = a.createdAt ? (a.createdAt as any).seconds : 0;
-        const timeB = b.createdAt ? (b.createdAt as any).seconds : 0;
+        const timeA = a.createdAt ? ((a.createdAt as any).seconds || 0) : 0;
+        const timeB = b.createdAt ? ((b.createdAt as any).seconds || 0) : 0;
+        if (timeA === 0 && a.createdAt instanceof Date) {
+            return -1;
+        }
+         if (timeB === 0 && b.createdAt instanceof Date) {
+            return 1;
+        }
         return timeB - timeA;
     }) : [];
 
@@ -145,7 +156,11 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
                                             <div key={index} className="text-sm p-2 bg-background rounded-md">
                                                 <p className="whitespace-pre-wrap">{n.text}</p>
                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                    {n.createdAt && (n.createdAt as any).seconds ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'Just now'}
+                                                    {n.createdAt && (n.createdAt as any).seconds 
+                                                        ? format(new Date((n.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') 
+                                                        : n.createdAt instanceof Date 
+                                                        ? 'Saving...' 
+                                                        : 'Just now'}
                                                 </p>
                                             </div>
                                         ))}
