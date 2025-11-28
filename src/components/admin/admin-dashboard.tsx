@@ -34,7 +34,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn } from '@/firebase';
-import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,7 +49,7 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const handleAddNote = () => {
+    const handleAddNote = async () => {
         if (!note.trim()) {
             toast({ variant: 'destructive', title: 'Note cannot be empty.' });
             return;
@@ -57,30 +57,33 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         if (!firestore) return;
 
         setIsSubmitting(true);
-        const requestRef = doc(firestore, 'callback_requests', request.id);
-        
-        // This is tricky. arrayUnion needs plain objects, not Date objects from serverTimestamp.
-        // The correct pattern is to call serverTimestamp() inside the update.
-        // However, the Note type expects a Date object. Let's adjust the Note type temporarily
-        // to handle the server value.
-        const newNote = {
-            text: note,
-            createdAt: serverTimestamp(), // This will be converted by Firestore
-        };
+        try {
+            const requestRef = doc(firestore, 'callback_requests', request.id);
+            
+            const newNote = {
+                text: note,
+                createdAt: serverTimestamp(),
+            };
 
-        const updateData: { notes: any; status?: 'Contacted' } = {
-            notes: arrayUnion(newNote)
-        };
+            const updateData: { notes: any; status?: 'Contacted' } = {
+                notes: arrayUnion(newNote)
+            };
 
-        if (request.status === 'New') {
-            updateData.status = 'Contacted';
+            if (request.status === 'New') {
+                updateData.status = 'Contacted';
+            }
+
+            await updateDoc(requestRef, updateData);
+            
+            toast({ title: 'Note added successfully.' });
+            setNote('');
+
+        } catch (error) {
+            console.error("Error adding note:", error);
+            toast({ variant: 'destructive', title: 'Failed to add note.' });
+        } finally {
+            setIsSubmitting(false);
         }
-
-        updateDocumentNonBlocking(requestRef, updateData);
-        
-        toast({ title: 'Note added successfully.' });
-        setNote('');
-        setIsSubmitting(false);
     };
     
     // Sort notes, newest first
@@ -709,3 +712,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
