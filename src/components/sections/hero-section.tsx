@@ -33,7 +33,7 @@ export default function HeroSection() {
               Explore Projects <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="bg-transparent border-accent text-accent hover:bg-accent hover:text-accent-foreground font-semibold text-base px-8 py-6 rounded-full shadow-lg transition-transform hover:scale-105">
+          <Button asChild size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary font-semibold text-base px-8 py-6 rounded-full shadow-lg transition-transform hover:scale-105">
             <Link href="/contact">
               Contact Us
             </Link>

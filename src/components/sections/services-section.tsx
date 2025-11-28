@@ -24,7 +24,7 @@ export default function ServicesSection() {
               </CardHeader>
               <CardContent className="flex flex-col flex-grow">
                 <p className="text-muted-foreground flex-grow mb-6">{service.description}</p>
-                <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground mt-auto">
+                <Button asChild variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-auto">
                     <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">Learn More</Link>
                 </Button>
               </CardContent>

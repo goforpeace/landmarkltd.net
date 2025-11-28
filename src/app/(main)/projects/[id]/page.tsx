@@ -222,7 +222,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                     <CardTitle className="font-headline text-2xl font-semibold text-primary">Get in Touch</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Button asChild className="w-full">
                         <a href={`tel:${phoneNumber}`}>
                             <Phone className="mr-2 h-4 w-4" /> Call Now
                         </a>

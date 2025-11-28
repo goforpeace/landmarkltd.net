@@ -11,7 +11,7 @@ export default function CtaSection() {
           Ready to find your perfect home or start your next project? Our team is here to help you every step of the way.
         </p>
         <div className="mt-8">
-          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-base px-10 py-6 rounded-full shadow-lg transition-transform hover:scale-105">
+          <Button asChild size="lg" className="font-semibold text-base px-10 py-6 rounded-full shadow-lg transition-transform hover:scale-105">
             <Link href="/contact">
               Contact Us <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
