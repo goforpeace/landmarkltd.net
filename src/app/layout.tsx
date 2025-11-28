@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Landmark Estates',
+  title: 'Landmark New Homes Ltd.',
   description: 'Your Dream Home Awaits',
 };
 
