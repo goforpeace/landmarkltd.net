@@ -284,7 +284,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
           {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter className="pt-4">
         <DialogClose asChild>
            <Button variant="ghost">Cancel</Button>
         </DialogClose>
@@ -363,7 +363,9 @@ function ProjectsTab() {
               <DialogTitle>Add New Project</DialogTitle>
               <DialogDescription>Fill in the details for the new project.</DialogDescription>
             </DialogHeader>
-            <ProjectForm onSave={() => setIsAddFormOpen(false)} />
+             <div className="max-h-[70vh] overflow-y-auto pr-6">
+                <ProjectForm onSave={() => setIsAddFormOpen(false)} />
+            </div>
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -407,10 +409,12 @@ function ProjectsTab() {
                         <DialogTitle>Edit Project</DialogTitle>
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
-                      <ProjectForm project={project} onSave={() => {
-                        // A bit of a hack to close the dialog
-                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-                      }} />
+                       <div className="max-h-[70vh] overflow-y-auto pr-6">
+                          <ProjectForm project={project} onSave={() => {
+                            // A bit of a hack to close the dialog
+                            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                          }} />
+                      </div>
                     </DialogContent>
                   </Dialog>
                     <AlertDialog>
@@ -486,5 +490,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
