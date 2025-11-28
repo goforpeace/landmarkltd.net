@@ -87,8 +87,8 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
           </CarouselContent>
           {images.length > 1 && (
             <>
-              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
-              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 block" />
+              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 block" />
             </>
           )}
         </Carousel>
@@ -144,15 +144,14 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
             <CarouselContent className="h-full">
               {images.map((img, index) => (
                 <CarouselItem key={index} className="h-full flex items-center justify-center">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={img}
-                      alt={`${title} image ${index + 1}`}
-                      fill
-                      className="object-contain"
-                      sizes="100vw"
-                    />
-                  </div>
+                  <Image
+                    src={img}
+                    alt={`${title} image ${index + 1}`}
+                    width={1920}
+                    height={1080}
+                    className="object-contain h-full w-auto"
+                    sizes="100vw"
+                  />
                 </CarouselItem>
               ))}
             </CarouselContent>
