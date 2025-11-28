@@ -33,7 +33,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative z-10 p-4 max-w-4xl mx-auto">
         <h1 className="font-headline text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-          Your Dream Home Awaits
+          Where Every Foot Tells A Story
         </h1>
         <p className="mt-4 md:mt-6 text-lg md:text-xl max-w-2xl mx-auto text-white/90">
           Discover exceptional properties crafted with passion, precision, and a vision for the future.
