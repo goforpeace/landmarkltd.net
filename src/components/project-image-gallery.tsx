@@ -88,7 +88,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
                 onClick={() => openLightbox(index)}
                 className="cursor-pointer"
               >
-                <div className="relative aspect-square w-full md:aspect-[4/3]">
+                <div className="relative aspect-[3/4] w-full">
                   <Image
                     src={img}
                     alt={`${title} image ${index + 1}`}
