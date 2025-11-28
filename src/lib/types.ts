@@ -46,3 +46,16 @@ export type ContactMessage = {
     nanoseconds: number;
   } | Date;
 };
+
+export type CallbackRequest = {
+  id: string;
+  name: string;
+  phone: string;
+  projectId: string;
+  projectName: string;
+  status: 'New' | 'Contacted';
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | Date;
+};

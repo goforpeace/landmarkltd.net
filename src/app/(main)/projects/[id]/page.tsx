@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { notFound } from 'next/navigation';
-import { useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useDoc, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import type { Project, FlatType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, Square, MapPin, Loader2, ArrowRight, Home, Phone, MessageSquare } from 'lucide-react';
+import { BedDouble, Bath, Square, MapPin, Loader2, ArrowRight, Home, Phone, MessageSquare, PhoneCall } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,95 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { serverTimestamp } from 'firebase/firestore';
+
+
+function CallbackRequestForm({ projectId, projectName }: { projectId: string; projectName: string }) {
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name || !phone) {
+            toast({
+                variant: 'destructive',
+                title: 'Validation Error',
+                description: 'Please enter both your name and phone number.',
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const callbackRequestData = {
+                name,
+                phone,
+                projectId,
+                projectName,
+                status: 'New',
+                createdAt: serverTimestamp(),
+            };
+            
+            const colRef = collection(firestore, 'callback_requests');
+            await addDocumentNonBlocking(colRef, callbackRequestData);
+
+            toast({
+                title: 'Request Sent!',
+                description: "We've received your request and will call you back shortly.",
+            });
+            setName('');
+            setPhone('');
+            // Close the dialog
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+        } catch (error) {
+            console.error("Error submitting callback request:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Something went wrong. Please try again.',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phone" className="text-right">Phone</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="col-span-3" required />
+            </div>
+            <DialogFooter>
+                <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Request Call
+                </Button>
+            </DialogFooter>
+        </form>
+    );
+}
 
 function FlatTypeDetails({ flatType }: { flatType: FlatType }) {
   return (
@@ -132,7 +221,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <CardHeader>
                     <CardTitle className="font-headline text-2xl font-semibold text-primary">Get in Touch</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row gap-4">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                         <a href={`tel:${phoneNumber}`}>
                             <Phone className="mr-2 h-4 w-4" /> Call Now
@@ -143,6 +232,22 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                             <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp
                         </a>
                     </Button>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="default" className="w-full sm:col-span-2 lg:col-span-1">
+                                <PhoneCall className="mr-2 h-4 w-4" /> Request a Call
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Request a Callback</DialogTitle>
+                                <DialogDescription>
+                                    Enter your details below and we'll call you back as soon as possible.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <CallbackRequestForm projectId={project.id} projectName={project.title} />
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
             

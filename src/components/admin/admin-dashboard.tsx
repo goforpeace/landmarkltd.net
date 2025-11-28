@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check } from "lucide-react";
 import { format } from "date-fns";
-import type { ContactMessage, Project, FlatType } from "@/lib/types";
+import type { ContactMessage, Project, FlatType, CallbackRequest } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -40,6 +40,82 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "../ui/badge";
+
+function CallbackRequestsTab() {
+    const firestore = useFirestore();
+    const requestsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'callback_requests'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
+
+    const { data: requests, isLoading } = useCollection<CallbackRequest>(requestsQuery);
+    const { toast } = useToast();
+
+    const handleUpdateStatus = (id: string, newStatus: 'Contacted' | 'New') => {
+        if (!firestore) return;
+        const requestRef = doc(firestore, "callback_requests", id);
+        updateDocumentNonBlocking(requestRef, { status: newStatus });
+        toast({
+            title: "Status Updated",
+            description: `Request marked as ${newStatus}.`,
+        });
+    };
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Callback Requests</CardTitle>
+                <CardDescription>Leads generated from the "Request a Call" feature.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Received</TableHead>
+                            <TableHead>Project</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && requests && requests.length > 0 ? requests.map((request) => (
+                            <TableRow key={request.id} className={request.status === 'Contacted' ? 'bg-muted/50' : ''}>
+                                <TableCell>{request.createdAt ? format(new Date((request.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'N/A'}</TableCell>
+                                <TableCell>{request.projectName}</TableCell>
+                                <TableCell>{request.name}</TableCell>
+                                <TableCell>{request.phone}</TableCell>
+                                <TableCell>
+                                     <Badge variant={request.status === 'New' ? 'destructive' : 'secondary'}>{request.status}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {request.status === 'New' && (
+                                        <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(request.id, 'Contacted')}>
+                                            <Check className="mr-2 h-4 w-4"/> Mark as Contacted
+                                        </Button>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        )) : !isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">No callback requests yet.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
 
 function MessagesTab() {
     const firestore = useFirestore();
@@ -535,10 +611,14 @@ export default function AdminDashboard() {
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs defaultValue="projects">
-          <TabsList className="mx-auto grid w-full max-w-md grid-cols-2">
+          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="callbacks"><PhoneCall className="mr-2 h-4 w-4"/>Callbacks</TabsTrigger>
             <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
           </TabsList>
+           <TabsContent value="callbacks" className="mt-6">
+            <CallbackRequestsTab />
+          </TabsContent>
           <TabsContent value="messages" className="mt-6">
             <MessagesTab />
           </TabsContent>

@@ -95,6 +95,22 @@
         "timestamp"
       ]
     },
+    "CallbackRequest": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "CallbackRequest",
+        "type": "object",
+        "description": "Represents a user's request for a callback.",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "phone": { "type": "string" },
+            "projectId": { "type": "string" },
+            "projectName": { "type": "string" },
+            "status": { "type": "string", "enum": ["New", "Contacted"] },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "phone", "projectId", "projectName", "status", "createdAt"]
+    },
     "AdminUser": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AdminUser",
@@ -157,6 +173,15 @@
         }
       },
       {
+          "path": "/callback_requests/{callbackRequestId}",
+          "definition": {
+              "entityName": "CallbackRequest",
+              "schema": { "$ref": "#/backend/entities/CallbackRequest" },
+              "description": "Stores user requests for a callback. Accessible by admins.",
+              "params": [{ "name": "callbackRequestId", "description": "The unique ID for the callback request."}]
+          }
+      },
+      {
         "path": "/roles_admin/{adminId}",
         "definition": {
           "entityName": "AdminUser",
@@ -173,6 +198,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to manage real estate projects, contact messages, and admin users for the Landmark Estates application. It emphasizes authorization independence and simplifies security rules. The structure leverages structural segregation to maintain homogeneous security postures within collections.\n\n*   `/projects`: Stores project details. No user-specific authorization is needed for reading projects, so it's a simple collection. Admins, managed via `/roles_admin/{adminId}`, have write access.\n*   `/contact_messages`: Stores messages submitted via the contact form. Only admins can read these messages. Similar to projects, admin authorization is managed via `/roles_admin/{adminId}`.\n*   `/roles_admin/{adminId}`: This collection signifies admin privileges. The existence of a document with the admin's UID grants admin rights. This approach simplifies the security rules and avoids relying on custom claims or document content for authorization, thus promoting Authorization Independence.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into collections with distinct security requirements (projects vs. contact messages) ensures that list operations can be secured effectively. For example, listing projects does not require complex filtering based on user roles because all documents in `/projects` share the same access control policies.\n*   Admin access is controlled via the existence of documents in `/roles_admin/{adminId}`, providing a clear and efficient way to determine administrative privileges."
+    "reasoning": "The Firestore structure is designed to manage real estate projects, contact messages, and admin users for the Landmark Estates application. It emphasizes authorization independence and simplifies security rules. The structure leverages structural segregation to maintain homogeneous security postures within collections.\n\n*   `/projects`: Stores project details. No user-specific authorization is needed for reading projects, so it's a simple collection. Admins, managed via `/roles_admin/{adminId}`, have write access.\n*   `/contact_messages`: Stores messages submitted via the contact form. Only admins can read these messages. Similar to projects, admin authorization is managed via `/roles_admin/{adminId}`.\n*   `/callback_requests`: Stores callback requests from users. Only admins should be able to read this data. Write access can be public as it's a lead generation form.\n*   `/roles_admin/{adminId}`: This collection signifies admin privileges. The existence of a document with the admin's UID grants admin rights. This approach simplifies the security rules and avoids relying on custom claims or document content for authorization, thus promoting Authorization Independence.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into collections with distinct security requirements (projects vs. contact messages) ensures that list operations can be secured effectively. For example, listing projects does not require complex filtering based on user roles because all documents in `/projects` share the same access control policies.\n*   Admin access is controlled via the existence of documents in `/roles_admin/{adminId}`, providing a clear and efficient way to determine administrative privileges."
   }
 }
