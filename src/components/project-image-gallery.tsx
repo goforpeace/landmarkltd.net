@@ -87,8 +87,8 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
           </CarouselContent>
           {images.length > 1 && (
             <>
-              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 block" />
-              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 block" />
+              <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
+              <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
             </>
           )}
         </Carousel>
@@ -134,7 +134,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
 
       {/* Lightbox Dialog */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-none w-screen h-screen p-0 bg-transparent border-0 shadow-none flex items-center justify-center">
+        <DialogContent className="max-w-none w-screen h-screen p-0 bg-black/80 border-0 shadow-none flex items-center justify-center fixed inset-0">
           <DialogTitle className="sr-only">{`${title} - Image Preview`}</DialogTitle>
           <Carousel
             setApi={setLightboxApi}
@@ -143,13 +143,13 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
           >
             <CarouselContent className="h-full">
               {images.map((img, index) => (
-                <CarouselItem key={index} className="h-full flex items-center justify-center">
+                <CarouselItem key={index} className="h-full flex items-center justify-center p-4">
                   <Image
                     src={img}
                     alt={`${title} image ${index + 1}`}
                     width={1920}
                     height={1080}
-                    className="object-contain h-full w-auto"
+                    className="object-contain h-auto max-h-full w-auto max-w-full"
                     sizes="100vw"
                   />
                 </CarouselItem>
@@ -157,8 +157,8 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
             </CarouselContent>
             {images.length > 1 && (
               <>
-                <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" />
-                <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselPrevious className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselNext className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10" />
               </>
             )}
           </Carousel>
