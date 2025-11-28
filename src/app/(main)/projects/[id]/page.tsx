@@ -17,17 +17,13 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const firestore = useFirestore();
   const id = params.id;
   
-  // Create a memoized reference to the Firestore document.
-  // This is critical to prevent re-renders and ensure the hook works correctly.
   const projectRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'projects', id);
   }, [firestore, id]);
 
-  const { data: project, isLoading, error } = useDoc<Project>(projectRef);
+  const { data: project, isLoading } = useDoc<Project>(projectRef);
 
-  // 1. Handle the loading state explicitly.
-  // While isLoading is true, show a spinner and do nothing else.
   if (isLoading) {
     return (
         <div className="flex h-[80vh] items-center justify-center">
@@ -36,15 +32,10 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     );
   }
 
-  // 2. Handle the "Not Found" state AFTER loading is complete.
-  // If loading is finished and there's still no project (or an error occurred),
-  // then it's safe to show the 404 page.
   if (!project) {
     notFound();
   }
   
-  // 3. If we've reached this point, loading is complete and the project exists.
-  // Ensure images is always an array to prevent runtime errors.
   const images = Array.isArray(project.images) ? project.images : [project.images].filter(Boolean) as string[];
 
   return (

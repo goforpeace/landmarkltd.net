@@ -170,15 +170,13 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
     const projectData = {
       ...data,
-      images: [data.images], // Ensure images is an array
+      images: [data.images],
       isFeatured: project?.isFeatured || false,
     };
 
     try {
       if (project?.id) {
-        updateDocumentNonBlocking(doc(firestore, 'projects', project.id), {
-          ...projectData,
-        });
+        updateDocumentNonBlocking(doc(firestore, 'projects', project.id), projectData);
       } else {
         addDocumentNonBlocking(collection(firestore, 'projects'), { ...projectData, createdAt: serverTimestamp() });
       }
@@ -283,11 +281,9 @@ function ProjectsTab() {
     
     const batch = writeBatch(firestore);
     
-    // Find the current featured project
     const featuredQuery = query(collection(firestore, 'projects'), where('isFeatured', '==', true), limit(1));
     const featuredSnapshot = await getDocs(featuredQuery);
     
-    // Un-feature the current featured project if it exists and is not the one we are featuring
     if (!featuredSnapshot.empty) {
       const currentFeaturedDoc = featuredSnapshot.docs[0];
       if (currentFeaturedDoc.id !== projectIdToFeature) {
@@ -295,7 +291,6 @@ function ProjectsTab() {
       }
     }
     
-    // Feature the new project
     const newFeaturedRef = doc(firestore, 'projects', projectIdToFeature);
     batch.update(newFeaturedRef, { isFeatured: true });
     
@@ -370,7 +365,6 @@ function ProjectsTab() {
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
                       <ProjectForm project={project} onSave={() => {
-                        // A bit of a hack to close the dialog, but works for now.
                         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
                       }} />
                     </DialogContent>
