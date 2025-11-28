@@ -159,7 +159,7 @@ const ProjectImageGallery: React.FC<PropType> = (props) => {
 
       {/* Lightbox Dialog */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-2 bg-background border-0 shadow-none flex items-center justify-center">
+        <DialogContent className="max-w-7xl w-full h-[90vh] p-2 bg-transparent border-0 shadow-none flex items-center justify-center">
           <Carousel
             setApi={setLightboxApi}
             opts={{ startIndex: selectedIndex, loop: true }}
