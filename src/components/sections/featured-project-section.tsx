@@ -58,23 +58,23 @@ export default function FeaturedProjectSection() {
             <h2 className="font-headline text-4xl md:text-5xl font-bold text-primary">Featured Project</h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">A glimpse into our commitment to excellence and luxury living.</p>
         </div>
-        <div className="max-w-4xl mx-auto">
-            <Card className="overflow-hidden shadow-2xl border-2 border-primary/10">
-                {imageUrl ? (
-                    <div className="aspect-video relative">
-                        <Image
-                            src={imageUrl}
-                            alt={featuredProject.title}
-                            fill
-                            className="object-cover"
-                            data-ai-hint="modern architecture"
-                        />
-                    </div>
-                ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                        <p className="text-muted-foreground">No image available</p>
-                    </div>
-                )}
+        <div className="max-w-4xl mx-auto flex flex-col items-center gap-0">
+             {imageUrl ? (
+                <div className="w-full aspect-[3/4] md:aspect-video relative rounded-t-lg overflow-hidden shadow-2xl">
+                    <Image
+                        src={imageUrl}
+                        alt={featuredProject.title}
+                        fill
+                        className="object-cover"
+                        data-ai-hint="modern architecture"
+                    />
+                </div>
+            ) : (
+                <div className="w-full aspect-video bg-muted flex items-center justify-center rounded-t-lg">
+                    <p className="text-muted-foreground">No image available</p>
+                </div>
+            )}
+            <Card className="w-full overflow-hidden shadow-2xl border-2 border-primary/10 rounded-b-lg rounded-t-none">
                 <CardHeader className="text-center">
                     <CardTitle className="font-headline text-3xl text-primary">{featuredProject.title}</CardTitle>
                 </CardHeader>
