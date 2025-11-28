@@ -58,21 +58,30 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
 
         setIsSubmitting(true);
         const requestRef = doc(firestore, 'callback_requests', request.id);
-        
-        const newNote = {
-            text: note,
-            createdAt: serverTimestamp(),
-        };
 
-        const updateData: { notes: any; status?: 'Contacted' } = {
-            notes: arrayUnion(newNote)
+        // This object is for Firestore, using the server timestamp
+        const updateDataForFirestore: { notes: any; status?: 'Contacted' } = {
+            notes: arrayUnion({
+                text: note,
+                createdAt: serverTimestamp(),
+            }),
+        };
+        
+        // This object is for the error context, using a client-side date
+        // This prevents a crash if an error occurs because serverTimestamp() is not JSON-serializable
+        const updateDataForErrorContext = {
+            notes: arrayUnion({
+                text: note,
+                createdAt: new Date().toISOString(), 
+            }),
+             status: request.status === 'New' ? 'Contacted' : undefined,
         };
 
         if (request.status === 'New') {
-            updateData.status = 'Contacted';
+            updateDataForFirestore.status = 'Contacted';
         }
 
-        updateDoc(requestRef, updateData)
+        updateDoc(requestRef, updateDataForFirestore)
             .then(() => {
                 toast({ title: 'Note added successfully.' });
                 setNote('');
@@ -80,14 +89,15 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
             .catch((error) => {
                 console.error("Error adding note:", error);
                 toast({ variant: 'destructive', title: 'Failed to add note.' });
+                // Use the JSON-safe object for the error emitter
                 errorEmitter.emit(
                   'permission-error',
                   new FirestorePermissionError({
                     path: requestRef.path,
                     operation: 'update',
-                    requestResourceData: updateData,
+                    requestResourceData: updateDataForErrorContext,
                   })
-                )
+                );
             })
             .finally(() => {
                 setIsSubmitting(false);
@@ -720,6 +730,8 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
 
     
 
