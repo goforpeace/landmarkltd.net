@@ -1,16 +1,15 @@
 'use server';
 
 import { z } from 'zod';
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { initializeFirebase as initializeAdminFirebase } from '@/firebase/server';
-import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 
 // --- PIN Authentication ---
 const pinSchema = z.object({
   pin: z.string().length(4, 'PIN must be 4 digits.'),
-  uid: z.string().min(1, 'User ID is missing.'), // Add UID to the schema
+  // UID is no longer needed for this simplified logic
 });
 
 export async function login(prevState: any, formData: FormData) {
@@ -18,33 +17,21 @@ export async function login(prevState: any, formData: FormData) {
   
   const validatedFields = pinSchema.safeParse({ 
     pin: formData.get('pin'),
-    uid: formData.get('uid'),
   });
 
   if (!validatedFields.success) {
-    return { message: 'Invalid form data.', success: false, token: null };
+    return { message: 'Invalid form data.', success: false };
   }
   
-  const { pin, uid } = validatedFields.data;
+  const { pin } = validatedFields.data;
 
+  // The server's only job is to validate the PIN.
   if (pin === HARDCODED_PIN) {
-    try {
-        // Use the Admin SDK to grant the admin role by creating a document
-        // in the roles_admin collection. This is a secure server-side operation.
-        const { firestore } = initializeAdminFirebase();
-        const adminRoleRef = doc(firestore, 'roles_admin', uid);
-        await setDoc(adminRoleRef, { grantedAt: serverTimestamp() });
-
-        // Signal success to the client. The client is already authenticated
-        // and its UID now has admin rights according to the security rules.
-        return { success: true, message: 'Login successful. Admin role granted.', token: 'mock-success-token' };
-
-    } catch (error) {
-        console.error("Error granting admin role:", error);
-        return { message: 'Server error while granting admin role.', success: false, token: null };
-    }
+    // On success, we just tell the client it was successful.
+    // The client will then show the admin dashboard.
+    return { success: true, message: 'Login successful.' };
   } else {
-    return { message: 'Invalid PIN.', success: false, token: null };
+    return { message: 'Invalid PIN.', success: false };
   }
 }
 

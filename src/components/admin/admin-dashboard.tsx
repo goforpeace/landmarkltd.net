@@ -33,8 +33,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useCollection, useFirestore, useAuth, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, deleteDoc, doc, setDoc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -414,16 +414,7 @@ function ProjectsTab() {
 }
 
 
-export default function AdminDashboard() {
-  const auth = useAuth();
-  
-  const handleLogout = async () => {
-    if (auth) {
-      await auth.signOut();
-    }
-  }
-
-
+export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow-sm">
@@ -434,7 +425,7 @@ export default function AdminDashboard() {
                     <h1 className="font-headline text-xl font-bold text-primary">Admin Dashboard</h1>
                 </div>
                 
-                <Button variant="ghost" onClick={handleLogout}>
+                <Button variant="ghost" onClick={onLogout}>
                     <LogOut className="mr-2 h-4 w-4" /> Logout
                 </Button>
                 
