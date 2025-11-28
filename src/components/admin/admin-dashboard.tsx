@@ -59,42 +59,32 @@ function CallbackRequestRow({ request }: { request: CallbackRequest }) {
         setIsSubmitting(true);
         try {
             const requestRef = doc(firestore, 'callback_requests', request.id);
-
-            // Read-Modify-Write Pattern
             const docSnap = await getDoc(requestRef);
 
             if (!docSnap.exists()) {
                 throw new Error("Document does not exist.");
             }
-
-            const existingNotes = docSnap.data().notes || [];
             
+            const existingNotes = docSnap.data().notes || [];
             const newNote = {
                 text: note,
-                createdAt: new Date(), // Use client-side timestamp
+                createdAt: new Date(), // Use client-side JS Date
             };
 
             const updatedNotes = [...existingNotes, newNote];
+            
+            const updateData = {
+              notes: updatedNotes,
+              ...(request.status === 'New' && { status: 'Contacted' }),
+            };
 
-            await updateDoc(requestRef, {
-                notes: updatedNotes,
-                ...(request.status === 'New' && { status: 'Contacted' }),
-            });
+            await updateDoc(requestRef, updateData);
             
             toast({ title: 'Note added successfully.' });
             setNote('');
-
         } catch (error) {
             console.error("Error adding note:", error);
             toast({ variant: 'destructive', title: 'Failed to add note.', description: (error as Error).message });
-             errorEmitter.emit(
-              'permission-error',
-              new FirestorePermissionError({
-                path: doc(firestore, 'callback_requests', request.id).path,
-                operation: 'update',
-                requestResourceData: { note: note }, // simplified error data
-              })
-            );
         } finally {
              setIsSubmitting(false);
         }
@@ -728,5 +718,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

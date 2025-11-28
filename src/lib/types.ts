@@ -1,5 +1,6 @@
 
 
+
 export type Note = {
   text: string;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
