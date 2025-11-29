@@ -17,10 +17,9 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gray-100 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gray-100">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
-          {/* Replace this src with the path to your actual logo image */}
           <Image 
             src="https://scontent.fdac207-1.fna.fbcdn.net/v/t39.30808-6/591497575_122094253281151503_7652116043221707060_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=127cfc&_nc_ohc=g6ZmrSsA2ogQ7kNvwGtu9e2&_nc_oc=AdkzFdJIRbJPrl1Yxq3cTLBKQP4Kul15HiP7mKGIjXy7aP1y4QurCAv4XxA2qSlkWQk&_nc_zt=23&_nc_ht=scontent.fdac207-1.fna&_nc_gid=-CyoR6V_lfLyvG-FxblL8Q&oh=00_AfhLVrwwfl6koCrogQKimxGmWu7jE0SnPatsBDzduN8MPQ&oe=693065DA"
             alt="Landmark New Homes Ltd. Logo" 
