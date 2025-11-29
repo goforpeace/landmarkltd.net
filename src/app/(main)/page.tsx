@@ -5,17 +5,30 @@ import ProjectsCarouselSection from '@/components/sections/projects-carousel-sec
 import FaqSection from '@/components/sections/faq-section';
 import DreamHomeSection from '@/components/sections/dream-home-section';
 import CtaSection from '@/components/sections/cta-section';
+import AnimatedContent from '@/components/animated-content';
 
 export default function Home() {
   return (
     <>
       <HeroSection />
-      <FeaturedProjectSection />
-      <ServicesSection />
-      <ProjectsCarouselSection />
-      <FaqSection />
-      <DreamHomeSection />
-      <CtaSection />
+      <AnimatedContent>
+        <FeaturedProjectSection />
+      </AnimatedContent>
+      <AnimatedContent>
+        <ServicesSection />
+      </AnimatedContent>
+      <AnimatedContent>
+        <ProjectsCarouselSection />
+      </AnimatedContent>
+      <AnimatedContent>
+        <FaqSection />
+      </AnimatedContent>
+      <AnimatedContent>
+        <DreamHomeSection />
+      </AnimatedContent>
+      <AnimatedContent>
+        <CtaSection />
+      </AnimatedContent>
     </>
   );
 }
