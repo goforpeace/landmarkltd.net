@@ -82,7 +82,7 @@ export default function ProjectDetailsClient({ id }: { id: string }) {
     notFound();
   }
   
-  const images = Array.isArray(project.images) ? project.images.filter(img => img && typeof img === 'string') : [];
+  const images = Array.isArray(project.imageUrls) ? project.imageUrls.filter(img => img && typeof img === 'string') : [];
   const phoneNumber = "+8801920709034";
   const whatsappLink = `https://wa.me/${phoneNumber.replace('+', '')}`;
 
