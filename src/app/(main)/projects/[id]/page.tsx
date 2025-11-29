@@ -6,7 +6,7 @@ import { useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Project, FlatType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, ArrowRight, Home, Phone, MessageSquare, PhoneCall, Loader2, MapPin } from 'lucide-react';
+import { BedDouble, Bath, ArrowRight, Home, Phone, MessageSquare, PhoneCall, Loader2, MapPin, Building2, LandPlot, Layers, Car } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
@@ -108,9 +108,29 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                         </Button>
                     </div>
                     <Separator />
+                     <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground"><LandPlot className="h-5 w-5 text-primary" /> Land Area</span>
+                        <span className="font-semibold">{project.landArea}</span>
+                    </div>
+                     <Separator />
+                     <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground"><Layers className="h-5 w-5 text-primary" /> Level</span>
+                        <span className="font-semibold">{project.level}</span>
+                    </div>
+                     <Separator />
+                     <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground"><Building2 className="h-5 w-5 text-primary" /> Elevators</span>
+                        <span className="font-semibold">{project.elevator}</span>
+                    </div>
+                     <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground"><Car className="h-5 w-5 text-primary" /> Parking</span>
+                        <span className="font-semibold">{project.parking}</span>
+                    </div>
+                    <Separator />
                     <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2 text-muted-foreground">Status</span>
-                        <Badge variant={project.status === 'Completed' ? 'default' : project.status === 'Sold' ? 'destructive' : 'secondary'} className="bg-primary/80 text-primary-foreground">
+                        <Badge variant={project.status === 'Completed' ? 'default' : project.status === 'Sold' ? 'destructive' : project.status === 'Upcoming' ? 'secondary' : 'secondary'} className="bg-primary/80 text-primary-foreground">
                             {project.status}
                         </Badge>
                     </div>

@@ -305,8 +305,12 @@ const projectSchema = z.object({
   description: z.string().min(20, "Full description is required."),
   images: z.array(z.object({ value: z.string().url("Invalid URL") })).min(1, "At least one image URL is required."),
   location: z.string().min(3, "Location is required."),
-  status: z.enum(['Completed', 'Under Construction', 'Sold']),
+  status: z.enum(['Completed', 'Under Construction', 'Sold', 'Upcoming']),
   flatTypes: z.array(flatTypeSchema).min(1, "At least one flat type is required."),
+  elevator: z.coerce.number().min(0, "Number of elevators is required."),
+  landArea: z.string().min(1, "Land area is required."),
+  level: z.string().min(1, "Level information is required."),
+  parking: z.string().min(1, "Parking information is required."),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -324,6 +328,10 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       location: project?.location || "",
       status: project?.status || "Under Construction",
       flatTypes: project?.flatTypes && project.flatTypes.length > 0 ? project.flatTypes : [{ name: 'Type A', area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 }],
+      elevator: project?.elevator || 1,
+      landArea: project?.landArea || "",
+      level: project?.level || "",
+      parking: project?.parking || "",
     }
   });
 
@@ -440,9 +448,33 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
             <option>Under Construction</option>
             <option>Completed</option>
             <option>Sold</option>
+            <option>Upcoming</option>
           </select>
           {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+              <Label htmlFor="landArea">Land Area</Label>
+              <Input id="landArea" {...register("landArea")} placeholder="e.g. 5 Katha"/>
+              {errors.landArea && <p className="text-sm text-destructive">{errors.landArea.message}</p>}
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="level">Level</Label>
+              <Input id="level" {...register("level")} placeholder="e.g. G+9"/>
+              {errors.level && <p className="text-sm text-destructive">{errors.level.message}</p>}
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="elevator">Elevators</Label>
+              <Input id="elevator" type="number" {...register("elevator")} />
+              {errors.elevator && <p className="text-sm text-destructive">{errors.elevator.message}</p>}
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="parking">Parking</Label>
+              <Input id="parking" {...register("parking")} placeholder="e.g. 10 slots"/>
+              {errors.parking && <p className="text-sm text-destructive">{errors.parking.message}</p>}
+          </div>
       </div>
       
       <Separator />
@@ -720,5 +752,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

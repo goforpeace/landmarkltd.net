@@ -48,6 +48,26 @@
             },
             "required": ["name", "area", "bedrooms", "bathrooms", "verandas"]
           }
+        },
+        "elevator": {
+            "type": "number",
+            "description": "Number of elevators in the project."
+        },
+        "landArea": {
+            "type": "string",
+            "description": "The total land area of the project (e.g., '5 Katha')."
+        },
+        "level": {
+            "type": "string",
+            "description": "The number of floors or levels (e.g., 'G+9')."
+        },
+        "parking": {
+            "type": "string",
+            "description": "Details about parking slots."
+        },
+        "status": {
+            "type": "string",
+            "enum": ["Completed", "Under Construction", "Sold", "Upcoming"]
         }
       },
       "required": [

@@ -1,6 +1,3 @@
-
-
-
 export type Note = {
   text: string;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
@@ -22,12 +19,16 @@ export type Project = {
   images: string[];
   flatTypes: FlatType[];
   location: string;
-  status: 'Completed' | 'Under Construction' | 'Sold';
+  status: 'Completed' | 'Under Construction' | 'Sold' | 'Upcoming';
   createdAt?: {
     seconds: number;
     nanoseconds: number;
   } | Date;
   isFeatured?: boolean;
+  elevator?: number;
+  landArea?: string;
+  level?: string;
+  parking?: string;
 };
 
 export type Service = {
