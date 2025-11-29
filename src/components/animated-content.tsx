@@ -32,12 +32,10 @@ const AnimatedContent = ({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    let scrollerTarget = container || document.getElementById('snap-main-container') || null;
-
-    if (typeof scrollerTarget === 'string') {
-      scrollerTarget = document.querySelector(scrollerTarget);
-    }
+    
+    // Let ScrollTrigger use the default viewport scroller
+    // The previous implementation was looking for a non-existent element
+    const scrollerTarget = container ? (typeof container === 'string' ? document.querySelector(container) : container) : null;
 
     const axis = direction === 'horizontal' ? 'x' : 'y';
     const offset = reverse ? -distance : distance;
@@ -79,7 +77,7 @@ const AnimatedContent = ({
 
     const st = ScrollTrigger.create({
       trigger: el,
-      scroller: scrollerTarget,
+      scroller: scrollerTarget, // This will be null, so GSAP uses the viewport
       start: `top ${startPct}%`,
       once: true,
       onEnter: () => tl.play()
