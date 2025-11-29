@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -61,6 +61,14 @@ export default function ProjectDetailsClient({ id }: { id: string }) {
   }, [firestore, id]);
 
   const { data: project, isLoading } = useDoc<Project>(projectRef);
+
+  useEffect(() => {
+    if (project?.title) {
+        // Set document title on the client side after data is fetched
+        document.title = `${project.title} | Landmark New Homes Ltd.`;
+    }
+  }, [project]);
+
 
   if (isLoading) {
     return (
