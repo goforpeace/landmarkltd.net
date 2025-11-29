@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Phone } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Landmark New Homes Ltd. - Premium Real Estate and Development',
@@ -31,15 +31,24 @@ export default function RootLayout({
           {children}
         </FirebaseClientProvider>
         <Toaster />
-        <Link 
-          href="http://m.me/landmarkltd.net"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-5 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
-          aria-label="Chat on Messenger"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Link>
+        <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-3">
+          <Link 
+            href="tel:+8809649174632"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-transform hover:scale-110"
+            aria-label="Call Us"
+          >
+            <Phone className="h-6 w-6" />
+          </Link>
+          <Link 
+            href="http://m.me/landmarkltd.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+            aria-label="Chat on Messenger"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Link>
+        </div>
       </body>
     </html>
   );
