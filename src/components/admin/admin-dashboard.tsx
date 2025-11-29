@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project, FlatType, CallbackRequest, Note } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
@@ -311,6 +312,9 @@ const projectSchema = z.object({
   landArea: z.string().min(1, "Land area is required."),
   level: z.string().min(1, "Level information is required."),
   parking: z.string().min(1, "Parking information is required."),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  metaKeywords: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -332,6 +336,9 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       landArea: project?.landArea || "",
       level: project?.level || "",
       parking: project?.parking || "",
+      metaTitle: project?.metaTitle || "",
+      metaDescription: project?.metaDescription || "",
+      metaKeywords: project?.metaKeywords || "",
     }
   });
 
@@ -390,151 +397,178 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
 
   return (
     <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="title">Project Title</Label>
-        <Input id="title" {...register("title")} />
-        {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-      </div>
-       <div className="space-y-2">
-        <Label htmlFor="shortDescription">Short Description</Label>
-        <Textarea id="shortDescription" {...register("shortDescription")} />
-        {errors.shortDescription && <p className="text-sm text-destructive">{errors.shortDescription.message}</p>}
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="description">Full Description</Label>
-        <Textarea id="description" {...register("description")} rows={5} />
-        {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Image URLs</Label>
-        {imageFields.map((field, index) => (
-          <div key={field.id} className="flex items-center gap-2">
-            <Input
-              {...register(`images.${index}.value`)}
-              placeholder="https://example.com/image.jpg"
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              onClick={() => removeImage(index)}
-              disabled={imageFields.length <= 1}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-         {errors.images && <p className="text-sm text-destructive">{errors.images.message || errors.images.root?.message}</p>}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => appendImage({ value: "" })}
-        >
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Image URL
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="location">Location URL</Label>
-          <Input id="location" {...register("location")} placeholder="https://maps.app.goo.gl/..."/>
-          {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
-        </div>
-         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <select id="status" {...register("status")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-            <option>Under Construction</option>
-            <option>Completed</option>
-            <option>Sold</option>
-            <option>Upcoming</option>
-          </select>
-          {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-2">
-              <Label htmlFor="landArea">Land Area</Label>
-              <Input id="landArea" {...register("landArea")} placeholder="e.g. 5 Katha"/>
-              {errors.landArea && <p className="text-sm text-destructive">{errors.landArea.message}</p>}
-          </div>
-          <div className="space-y-2">
-              <Label htmlFor="level">Level</Label>
-              <Input id="level" {...register("level")} placeholder="e.g. G+9"/>
-              {errors.level && <p className="text-sm text-destructive">{errors.level.message}</p>}
-          </div>
-          <div className="space-y-2">
-              <Label htmlFor="elevator">Elevators</Label>
-              <Input id="elevator" type="number" {...register("elevator")} />
-              {errors.elevator && <p className="text-sm text-destructive">{errors.elevator.message}</p>}
-          </div>
-          <div className="space-y-2">
-              <Label htmlFor="parking">Parking</Label>
-              <Input id="parking" {...register("parking")} placeholder="e.g. 10 slots"/>
-              {errors.parking && <p className="text-sm text-destructive">{errors.parking.message}</p>}
-          </div>
-      </div>
-      
-      <Separator />
-
-      <div className="space-y-4">
-          <div className="flex items-center justify-between">
-              <Label className="text-lg font-medium">Flat Types</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => appendFlatType({ name: `Type ${String.fromCharCode(65 + flatTypeFields.length)}`, area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 })}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Flat Type
-              </Button>
-          </div>
-          {flatTypeFields.map((field, index) => (
-            <div key={field.id} className="rounded-lg border p-4 space-y-4 relative">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="space-y-2 md:col-span-1 col-span-2">
-                      <Label htmlFor={`flatTypes.${index}.name`}>Type Name</Label>
-                      <Input id={`flatTypes.${index}.name`} {...register(`flatTypes.${index}.name`)} placeholder="e.g. Type A" />
-                       {errors.flatTypes?.[index]?.name && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.name?.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`flatTypes.${index}.area`}>Area (sqft)</Label>
-                      <Input id={`flatTypes.${index}.area`} type="number" {...register(`flatTypes.${index}.area`)} />
-                      {errors.flatTypes?.[index]?.area && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.area?.message}</p>}
-                    </div>
-                     <div className="space-y-2">
-                      <Label htmlFor={`flatTypes.${index}.bedrooms`}>Bedrooms</Label>
-                      <Input id={`flatTypes.${index}.bedrooms`} type="number" {...register(`flatTypes.${index}.bedrooms`)} />
-                      {errors.flatTypes?.[index]?.bedrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bedrooms?.message}</p>}
-                    </div>
-                     <div className="space-y-2">
-                      <Label htmlFor={`flatTypes.${index}.bathrooms`}>Bathrooms</Label>
-                      <Input id={`flatTypes.${index}.bathrooms`} type="number" {...register(`flatTypes.${index}.bathrooms`)} />
-                      {errors.flatTypes?.[index]?.bathrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bathrooms?.message}</p>}
-                    </div>
-                     <div className="space-y-2">
-                      <Label htmlFor={`flatTypes.${index}.verandas`}>Verandas</Label>
-                      <Input id={`flatTypes.${index}.verandas`} type="number" {...register(`flatTypes.${index}.verandas`)} />
-                      {errors.flatTypes?.[index]?.verandas && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.verandas?.message}</p>}
-                    </div>
-                </div>
-                 <Button
+      <Tabs defaultValue="main">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="main">Main Details</TabsTrigger>
+            <TabsTrigger value="seo">SEO</TabsTrigger>
+        </TabsList>
+        <TabsContent value="main" className="mt-6 space-y-6">
+            <div className="space-y-2">
+                <Label htmlFor="title">Project Title</Label>
+                <Input id="title" {...register("title")} />
+                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="shortDescription">Short Description</Label>
+                <Textarea id="shortDescription" {...register("shortDescription")} />
+                {errors.shortDescription && <p className="text-sm text-destructive">{errors.shortDescription.message}</p>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="description">Full Description</Label>
+                <Textarea id="description" {...register("description")} rows={5} />
+                {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+            </div>
+            
+            <div className="space-y-2">
+                <Label>Image URLs</Label>
+                {imageFields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2">
+                    <Input
+                    {...register(`images.${index}.value`)}
+                    placeholder="https://example.com/image.jpg"
+                    />
+                    <Button
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="absolute top-2 right-2 h-6 w-6"
-                    onClick={() => removeFlatType(index)}
-                    disabled={flatTypeFields.length <= 1}
-                >
+                    onClick={() => removeImage(index)}
+                    disabled={imageFields.length <= 1}
+                    >
                     <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+                ))}
+                {errors.images && <p className="text-sm text-destructive">{errors.images.message || errors.images.root?.message}</p>}
+                <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => appendImage({ value: "" })}
+                >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Image URL
                 </Button>
             </div>
-          ))}
-          {errors.flatTypes && <p className="text-sm text-destructive">{errors.flatTypes.message || errors.flatTypes.root?.message}</p>}
-      </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                <Label htmlFor="location">Location URL</Label>
+                <Input id="location" {...register("location")} placeholder="https://maps.app.goo.gl/..."/>
+                {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select id="status" {...register("status")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                    <option>Under Construction</option>
+                    <option>Completed</option>
+                    <option>Sold</option>
+                    <option>Upcoming</option>
+                </select>
+                {errors.status && <p className="text-sm text-destructive">{errors.status.message}</p>}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="landArea">Land Area</Label>
+                    <Input id="landArea" {...register("landArea")} placeholder="e.g. 5 Katha"/>
+                    {errors.landArea && <p className="text-sm text-destructive">{errors.landArea.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="level">Level</Label>
+                    <Input id="level" {...register("level")} placeholder="e.g. G+9"/>
+                    {errors.level && <p className="text-sm text-destructive">{errors.level.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="elevator">Elevators</Label>
+                    <Input id="elevator" type="number" {...register("elevator")} />
+                    {errors.elevator && <p className="text-sm text-destructive">{errors.elevator.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="parking">Parking</Label>
+                    <Input id="parking" {...register("parking")} placeholder="e.g. 10 slots"/>
+                    {errors.parking && <p className="text-sm text-destructive">{errors.parking.message}</p>}
+                </div>
+            </div>
+            
+            <Separator />
+
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <Label className="text-lg font-medium">Flat Types</Label>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendFlatType({ name: `Type ${String.fromCharCode(65 + flatTypeFields.length)}`, area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 })}
+                    >
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Flat Type
+                    </Button>
+                </div>
+                {flatTypeFields.map((field, index) => (
+                    <div key={field.id} className="rounded-lg border p-4 space-y-4 relative">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="space-y-2 md:col-span-1 col-span-2">
+                            <Label htmlFor={`flatTypes.${index}.name`}>Type Name</Label>
+                            <Input id={`flatTypes.${index}.name`} {...register(`flatTypes.${index}.name`)} placeholder="e.g. Type A" />
+                            {errors.flatTypes?.[index]?.name && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.name?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor={`flatTypes.${index}.area`}>Area (sqft)</Label>
+                            <Input id={`flatTypes.${index}.area`} type="number" {...register(`flatTypes.${index}.area`)} />
+                            {errors.flatTypes?.[index]?.area && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.area?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor={`flatTypes.${index}.bedrooms`}>Bedrooms</Label>
+                            <Input id={`flatTypes.${index}.bedrooms`} type="number" {...register(`flatTypes.${index}.bedrooms`)} />
+                            {errors.flatTypes?.[index]?.bedrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bedrooms?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor={`flatTypes.${index}.bathrooms`}>Bathrooms</Label>
+                            <Input id={`flatTypes.${index}.bathrooms`} type="number" {...register(`flatTypes.${index}.bathrooms`)} />
+                            {errors.flatTypes?.[index]?.bathrooms && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.bathrooms?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor={`flatTypes.${index}.verandas`}>Verandas</Label>
+                            <Input id={`flatTypes.${index}.verandas`} type="number" {...register(`flatTypes.${index}.verandas`)} />
+                            {errors.flatTypes?.[index]?.verandas && <p className="text-sm text-destructive">{errors.flatTypes?.[index]?.verandas?.message}</p>}
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => removeFlatType(index)}
+                            disabled={flatTypeFields.length <= 1}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                {errors.flatTypes && <p className="text-sm text-destructive">{errors.flatTypes.message || errors.flatTypes.root?.message}</p>}
+            </div>
+        </TabsContent>
+        <TabsContent value="seo" className="mt-6 space-y-6">
+             <div className="space-y-2">
+                <Label htmlFor="metaTitle">Meta Title</Label>
+                <Input id="metaTitle" {...register("metaTitle")} placeholder="e.g. Luxury Apartments in Downtown" />
+                <p className="text-xs text-muted-foreground">Appears in the browser tab and search engine results. Keep it concise.</p>
+                {errors.metaTitle && <p className="text-sm text-destructive">{errors.metaTitle.message}</p>}
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea id="metaDescription" {...register("metaDescription")} placeholder="e.g. Discover stunning, modern apartments with premium amenities..." />
+                <p className="text-xs text-muted-foreground">A brief summary of the page for search results. Aim for 150-160 characters.</p>
+                {errors.metaDescription && <p className="text-sm text-destructive">{errors.metaDescription.message}</p>}
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="metaKeywords">Meta Keywords</Label>
+                <Input id="metaKeywords" {...register("metaKeywords")} placeholder="e.g. apartment, real estate, luxury living, downtown" />
+                <p className="text-xs text-muted-foreground">Comma-separated keywords relevant to the project.</p>
+                {errors.metaKeywords && <p className="text-sm text-destructive">{errors.metaKeywords.message}</p>}
+            </div>
+        </TabsContent>
+      </Tabs>
       <DialogFooter className="pt-4">
         <DialogClose asChild>
            <Button variant="ghost">Cancel</Button>
@@ -615,12 +649,12 @@ function ProjectsTab() {
           <DialogTrigger asChild>
             <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Add New Project</DialogTitle>
               <DialogDescription>Fill in the details for the new project.</DialogDescription>
             </DialogHeader>
-             <div className="max-h-[80vh] overflow-y-auto p-1">
+             <div className="max-h-[80vh] overflow-y-auto p-1 pr-4">
                 <ProjectForm onSave={() => setIsAddFormOpen(false)} />
             </div>
           </DialogContent>
@@ -662,12 +696,12 @@ function ProjectsTab() {
                     <DialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
+                    <DialogContent className="sm:max-w-3xl">
                        <DialogHeader>
                         <DialogTitle>Edit Project</DialogTitle>
                         <DialogDescription>Update the details for this project.</DialogDescription>
                       </DialogHeader>
-                       <div className="max-h-[80vh] overflow-y-auto p-1">
+                       <div className="max-h-[80vh] overflow-y-auto p-1 pr-4">
                           <ProjectForm project={project} onSave={() => {
                             // A bit of a hack to close the dialog
                             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -733,10 +767,11 @@ export default function AdminDashboard() {
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs defaultValue="callbacks">
-          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-3">
+          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="callbacks"><PhoneCall className="mr-2 h-4 w-4"/>Callbacks</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
             <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
+            <TabsTrigger value="seo"><Search className="mr-2 h-4 w-4"/>SEO</TabsTrigger>
           </TabsList>
            <TabsContent value="callbacks" className="mt-6">
             <CallbackRequestsTab />
@@ -746,6 +781,17 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="messages" className="mt-6">
             <ContactMessagesTab />
+          </TabsContent>
+           <TabsContent value="seo" className="mt-6">
+             <Card>
+                <CardHeader>
+                    <CardTitle>SEO Management</CardTitle>
+                    <CardDescription>Manage your site's SEO from the projects tab. Edit a project to update its SEO details.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>To manage the SEO for a specific project, please go to the "Projects" tab, click the "Edit" button for the desired project, and navigate to the "SEO" tab within the form.</p>
+                </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

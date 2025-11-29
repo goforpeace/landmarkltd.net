@@ -1,3 +1,4 @@
+
 export type Note = {
   text: string;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
@@ -29,6 +30,9 @@ export type Project = {
   landArea?: string;
   level?: string;
   parking?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 };
 
 export type Service = {

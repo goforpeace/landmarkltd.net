@@ -1,9 +1,10 @@
+
 'use client';
 
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Project, FlatType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { BedDouble, Bath, ArrowRight, Home, Phone, MessageSquare, PhoneCall, Loader2, MapPin, Building2, LandPlot, Layers, Car } from 'lucide-react';
@@ -28,6 +29,51 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import CallbackRequestForm from '@/components/callback-request-form';
+import { initializeFirebase } from '@/firebase/client';
+import { Metadata } from 'next';
+
+async function getProject(id: string): Promise<Project | null> {
+    const { firestore } = initializeFirebase();
+    const projectRef = doc(firestore, 'projects', id);
+    const projectSnap = await getDoc(projectRef);
+    if (projectSnap.exists()) {
+        return { id: projectSnap.id, ...projectSnap.data() } as Project;
+    }
+    return null;
+}
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const project = await getProject(params.id);
+
+  if (!project) {
+    return {
+      title: 'Project Not Found',
+    };
+  }
+
+  const title = project.metaTitle || `${project.title} | Landmark New Homes Ltd.`;
+  const description = project.metaDescription || project.shortDescription;
+  const keywords = project.metaKeywords || '';
+  const imageUrl = project.images && project.images.length > 0 ? project.images[0] : '';
+
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      title,
+      description,
+      images: imageUrl ? [{ url: imageUrl }] : [],
+    },
+     twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : [],
+    },
+  };
+}
 
 
 function FlatTypeDetails({ flatType }: { flatType: FlatType }) {

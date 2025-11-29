@@ -68,6 +68,18 @@
         "status": {
             "type": "string",
             "enum": ["Completed", "Under Construction", "Sold", "Upcoming"]
+        },
+        "metaTitle": {
+            "type": "string",
+            "description": "The title tag for SEO purposes."
+        },
+        "metaDescription": {
+            "type": "string",
+            "description": "The meta description for SEO purposes."
+        },
+        "metaKeywords": {
+            "type": "string",
+            "description": "Comma-separated keywords for SEO."
         }
       },
       "required": [
