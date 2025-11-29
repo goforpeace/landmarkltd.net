@@ -25,7 +25,7 @@ export default function Navbar() {
               alt="Landmark New Homes Ltd. Logo"
               width={180}
               height={40}
-              className="h-12 w-auto object-contain"
+              className="h-14 w-auto object-contain"
               priority
             />
         </Link>
