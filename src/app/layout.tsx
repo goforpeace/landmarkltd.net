@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import Link from 'next/link';
+import { Phone } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Landmark New Homes Ltd. - Premium Real Estate and Development',
@@ -29,6 +31,13 @@ export default function RootLayout({
           {children}
         </FirebaseClientProvider>
         <Toaster />
+        <Link 
+          href="tel:+8809649174632"
+          className="fixed bottom-5 left-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+          aria-label="Call us"
+        >
+          <Phone className="h-6 w-6" />
+        </Link>
       </body>
     </html>
   );
