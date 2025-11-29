@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="!scroll-smooth" suppressHydrationWarning>
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="icon" href="https://res.cloudinary.com/dj4lirc0d/image/upload/v1764409306/Artboard_1_pabijh.png" type="image/png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
