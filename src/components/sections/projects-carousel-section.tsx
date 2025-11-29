@@ -53,10 +53,8 @@ export default function ProjectsCarouselSection() {
           >
             <CarouselContent className="-ml-4">
               {projects.map((project) => {
-                 const imageUrl = Array.isArray(project.images) && project.images.length > 0
-                    ? project.images[0]
-                    : typeof project.images === 'string'
-                    ? project.images
+                 const imageUrl = Array.isArray(project.imageUrls) && project.imageUrls.length > 0
+                    ? project.imageUrls[0]
                     : null;
                 
                 return(

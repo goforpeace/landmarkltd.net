@@ -12,10 +12,8 @@ import type { Project } from '@/lib/types';
 import { Loader2, ArrowRight } from 'lucide-react';
 
 function ProjectCard({ project }: { project: Project }) {
-  const imageUrl = Array.isArray(project.images) && project.images.length > 0
-    ? project.images[0]
-    : typeof project.images === 'string'
-    ? project.images
+  const imageUrl = Array.isArray(project.imageUrls) && project.imageUrls.length > 0
+    ? project.imageUrls[0]
     : null;
 
   return (
