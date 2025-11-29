@@ -4,8 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Landmark New Homes Ltd.',
-  description: 'Your Dream Home Awaits',
+  title: 'Landmark New Homes Ltd. - Premium Real Estate and Development',
+  description: 'Discover your dream home with Landmark New Homes Ltd. We specialize in luxury residential properties, commercial developments, and comprehensive IT solutions.',
+  keywords: ['real estate', 'luxury homes', 'property development', 'Landmark New Homes', 'apartments for sale', 'commercial properties'],
+  authors: [{ name: 'Landmark New Homes Ltd.' }],
 };
 
 export default function RootLayout({
