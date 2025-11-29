@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp, Search, Eye } from "lucide-react";
 import { format } from "date-fns";
 import type { ContactMessage, Project, FlatType, CallbackRequest, Note } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,32 @@ function ContactMessagesTab() {
                 <TableCell>{message.phone}</TableCell>
                 <TableCell className="max-w-xs truncate">{message.message}</TableCell>
                 <TableCell className="text-right">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>View Message</DialogTitle>
+                        <DialogDescription>
+                          From: {message.name} ({message.email})
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <p><strong>Phone:</strong> {message.phone}</p>
+                        <p><strong>Received:</strong> {message.createdAt ? format(new Date((message.createdAt as any).seconds * 1000), 'dd MMM yyyy, HH:mm') : 'N/A'}</p>
+                        <Separator />
+                        <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/50 p-4">
+                          <p className="whitespace-pre-wrap">{message.message}</p>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                         <DialogClose asChild>
+                           <Button>Close</Button>
+                         </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                    <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -304,7 +330,7 @@ const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   shortDescription: z.string().min(10, "Short description is required."),
   description: z.string().min(20, "Full description is required."),
-  images: z.array(z.object({ value: z.string().url("Invalid URL") })).min(1, "At least one image URL is required."),
+  imageUrls: z.array(z.object({ value: z.string().url("Invalid URL") })).min(1, "At least one image URL is required."),
   location: z.string().min(3, "Location is required."),
   status: z.enum(['Completed', 'Under Construction', 'Sold', 'Upcoming']),
   flatTypes: z.array(flatTypeSchema).min(1, "At least one flat type is required."),
@@ -326,9 +352,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
       title: project?.title || "",
       shortDescription: project?.shortDescription || "",
       description: project?.description || "",
-      images: Array.isArray(project?.images) && project.images.length > 0 && project.images[0]
-        ? project.images.map(url => ({ value: url }))
-        : [{ value: "" }],
+      imageUrls: project?.imageUrls?.map(url => ({ value: url })) || [{ value: "" }],
       location: project?.location || "",
       status: project?.status || "Under Construction",
       flatTypes: project?.flatTypes && project.flatTypes.length > 0 ? project.flatTypes : [{ name: 'Type A', area: 0, bedrooms: 0, bathrooms: 0, verandas: 0 }],
@@ -344,7 +368,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
 
   const { fields: imageFields, append: appendImage, remove: removeImage } = useFieldArray({
     control,
-    name: "images"
+    name: "imageUrls"
   });
 
   const { fields: flatTypeFields, append: appendFlatType, remove: removeFlatType } = useFieldArray({
@@ -362,15 +386,15 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
     }
 
     try {
-      const imageUrls = data.images.map(img => img.value).filter(url => url.trim() !== '');
-      if (imageUrls.length === 0) {
+      const urls = data.imageUrls.map(img => img.value).filter(url => url.trim() !== '');
+      if (urls.length === 0) {
         toast({ variant: "destructive", title: "Validation Error", description: "At least one valid image URL is required." });
         return;
       }
 
       const projectData = {
         ...data,
-        images: imageUrls,
+        imageUrls: urls,
       };
 
       if (project?.id) {
@@ -424,7 +448,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
                 {imageFields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
                     <Input
-                    {...register(`images.${index}.value`)}
+                    {...register(`imageUrls.${index}.value`)}
                     placeholder="https://example.com/image.jpg"
                     />
                     <Button
@@ -438,7 +462,7 @@ function ProjectForm({ project, onSave }: { project?: Project, onSave: () => voi
                     </Button>
                 </div>
                 ))}
-                {errors.images && <p className="text-sm text-destructive">{errors.images.message || errors.images.root?.message}</p>}
+                {errors.imageUrls && <p className="text-sm text-destructive">{errors.imageUrls.message || errors.imageUrls.root?.message}</p>}
                 <Button
                 type="button"
                 variant="outline"
@@ -798,3 +822,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
