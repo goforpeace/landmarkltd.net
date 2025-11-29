@@ -32,18 +32,20 @@ export default function HeroSection() {
 
   const { data: settings, isLoading } = useDoc<SiteSettings>(settingsRef);
 
+  // Use the custom URL if available, otherwise fall back to the default.
+  // This ensures an image is always ready to be rendered without a loading state.
   const heroImage = !isLoading && settings?.heroImageUrl 
     ? { imageUrl: settings.heroImageUrl, description: 'Hero background image', imageHint: 'landscape architecture' }
     : defaultHeroImage;
 
   return (
     <section className="relative h-[80vh] min-h-[500px] w-full flex items-center justify-center text-center text-white">
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <Loader2 className="h-16 w-16 animate-spin" />
-        </div>
-      )}
-      {!isLoading && heroImage && (
+      {/* 
+        The loader is removed from here to prevent a flash of loading content.
+        We will render the default image immediately, and it will be swapped 
+        by the custom image once the Firestore data is loaded.
+      */}
+      {heroImage && (
         <Image
           src={heroImage.imageUrl}
           alt={heroImage.description}
