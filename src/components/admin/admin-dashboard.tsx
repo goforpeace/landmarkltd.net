@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp, Search, Eye } from "lucide-react";
+import { Building, Mail, Trash2, Edit, PlusCircle, Loader2, Star, PhoneCall, Check, ChevronDown, ChevronUp, Search, Eye, HomeIcon } from "lucide-react";
 import { format } from "date-fns";
-import type { ContactMessage, Project, FlatType, CallbackRequest, Note } from "@/lib/types";
+import type { ContactMessage, Project, FlatType, CallbackRequest, Note, SiteSettings } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useAuth, useCollection, useFirestore, deleteDocumentNonBlocking, setDocumentNonBlocking, initiateAnonymousSignIn, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where, limit, arrayUnion, updateDoc, getDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,90 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
+
+function HomepageSettingsTab() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const settingsId = "homepage_settings"; // Hardcoded ID for the single settings document
+
+    const settingsRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'site_settings', settingsId);
+    }, [firestore]);
+
+    const { data: settings, isLoading } = useDoc<SiteSettings>(settingsRef);
+
+    const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<{ heroImageUrl: string }>({
+        resolver: zodResolver(z.object({
+            heroImageUrl: z.string().url("Please enter a valid URL.").or(z.literal('')),
+        })),
+        defaultValues: {
+            heroImageUrl: ""
+        }
+    });
+
+    useEffect(() => {
+        if (settings) {
+            setValue("heroImageUrl", settings.heroImageUrl || "");
+        }
+    }, [settings, setValue]);
+
+    const onSubmit = async (data: { heroImageUrl: string }) => {
+        if (!firestore) {
+            toast({ variant: "destructive", title: "Error", description: "Firestore not available." });
+            return;
+        }
+
+        try {
+            setDocumentNonBlocking(settingsRef!, data, { merge: true });
+            toast({ title: "Success", description: "Homepage settings updated!" });
+        } catch (error) {
+            console.error("Error updating settings:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to update settings." });
+        }
+    };
+
+    if (isLoading) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Homepage Settings</CardTitle>
+                    <CardDescription>Manage content for the homepage.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                </CardContent>
+             </Card>
+        )
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Homepage Settings</CardTitle>
+                <CardDescription>Manage content for the homepage.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="heroImageUrl">Hero Section Image URL</Label>
+                        <Input
+                            id="heroImageUrl"
+                            placeholder="https://example.com/hero-image.jpg"
+                            {...register("heroImageUrl")}
+                        />
+                        {errors.heroImageUrl && <p className="text-sm text-destructive">{errors.heroImageUrl.message}</p>}
+                        <p className="text-xs text-muted-foreground">This image will be displayed in the main hero section of your homepage.</p>
+                    </div>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Settings
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    );
+}
 
 function ContactMessagesTab() {
   const firestore = useFirestore();
@@ -791,12 +875,16 @@ export default function AdminDashboard() {
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <Tabs defaultValue="callbacks">
-          <TabsList className="mx-auto grid w-full max-w-lg grid-cols-4">
+          <TabsList className="mx-auto grid w-full max-w-xl grid-cols-5">
+            <TabsTrigger value="homepage"><HomeIcon className="mr-2 h-4 w-4"/>Homepage</TabsTrigger>
             <TabsTrigger value="callbacks"><PhoneCall className="mr-2 h-4 w-4"/>Callbacks</TabsTrigger>
             <TabsTrigger value="projects"><Building className="mr-2 h-4 w-4"/>Projects</TabsTrigger>
             <TabsTrigger value="messages"><Mail className="mr-2 h-4 w-4"/>Messages</TabsTrigger>
             <TabsTrigger value="seo"><Search className="mr-2 h-4 w-4"/>SEO</TabsTrigger>
           </TabsList>
+          <TabsContent value="homepage" className="mt-6">
+            <HomepageSettingsTab />
+          </TabsContent>
            <TabsContent value="callbacks" className="mt-6">
             <CallbackRequestsTab />
           </TabsContent>

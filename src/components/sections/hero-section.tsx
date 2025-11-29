@@ -1,10 +1,11 @@
+
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, PhoneCall } from 'lucide-react';
+import { ArrowRight, PhoneCall, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,13 +16,34 @@ import {
 } from "@/components/ui/dialog";
 import CallbackRequestForm from '@/components/callback-request-form';
 import SplitText from '../split-text';
+import { useDoc, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/provider';
+import { doc } from 'firebase/firestore';
+import type { SiteSettings } from '@/lib/types';
 
 export default function HeroSection() {
-  const heroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
+  const defaultHeroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
+  
+  const firestore = useFirestore();
+  const settingsRef = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return doc(firestore, 'site_settings', 'homepage_settings');
+  }, [firestore]);
+
+  const { data: settings, isLoading } = useDoc<SiteSettings>(settingsRef);
+
+  const heroImage = !isLoading && settings?.heroImageUrl 
+    ? { imageUrl: settings.heroImageUrl, description: 'Hero background image', imageHint: 'landscape architecture' }
+    : defaultHeroImage;
 
   return (
     <section className="relative h-[80vh] min-h-[500px] w-full flex items-center justify-center text-center text-white">
-      {heroImage && (
+      {isLoading && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin" />
+        </div>
+      )}
+      {!isLoading && heroImage && (
         <Image
           src={heroImage.imageUrl}
           alt={heroImage.description}

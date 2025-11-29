@@ -13,11 +13,11 @@ export type FlatType = {
 };
 
 export type Project = {
-  id: string; // Now mandatory
+  id: string;
   title: string;
   shortDescription: string;
   description: string;
-  images: string[];
+  imageUrls: string[];
   flatTypes: FlatType[];
   location: string;
   status: 'Completed' | 'Under Construction' | 'Sold' | 'Upcoming';
@@ -70,4 +70,8 @@ export type CallbackRequest = {
     nanoseconds: number;
   } | Date;
   notes?: Note[];
+};
+
+export type SiteSettings = {
+  heroImageUrl?: string;
 };
