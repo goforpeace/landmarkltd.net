@@ -5,6 +5,7 @@ import { Building, Menu } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 const navLinks = [
   { href: '/#projects', label: 'Projects' },
@@ -19,10 +20,14 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gray-100 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
-          <Building className="h-7 w-7 text-primary" />
-          <span className="font-headline text-xl font-bold text-gray-800">
-            Landmark New Homes
-          </span>
+          {/* Replace this src with the path to your actual logo image */}
+          <Image 
+            src="/logo-placeholder.png" // IMPORTANT: Replace this with your logo's URL or path
+            alt="Landmark New Homes Ltd. Logo" 
+            width={180} 
+            height={40}
+            className="object-contain"
+          />
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
